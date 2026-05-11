@@ -1,0 +1,49 @@
+{
+  "expo": {
+    "name": "Aquaria",
+    "slug": "aquaria",
+    "scheme": "aquaria",
+    "version": "1.0.0",
+    "orientation": "portrait",
+    "icon": "./assets/icon.png",
+    "userInterfaceStyle": "dark",
+    "newArchEnabled": true,
+    "splash": {
+      "image": "./assets/splash-icon.png",
+      "resizeMode": "contain",
+      "backgroundColor": "#070d1a"
+    },
+    "ios": {
+      "supportsTablet": true,
+      "bundleIdentifier": "com.aquaria.app"
+    },
+    "android": {
+      "adaptiveIcon": {
+        "foregroundImage": "./assets/adaptive-icon.png",
+        "backgroundColor": "#070d1a"
+      },
+      "package": "com.aquaria.app",
+      "edgeToEdgeEnabled": false
+    },
+    "web": {
+      "favicon": "./assets/favicon.png"
+    },
+    "plugins": [
+      "expo-font",
+      "expo-splash-screen",
+      "expo-web-browser"
+    ],
+    "extra": {
+      "eas": {
+        "projectId": "01a42c38-7d8f-4395-883b-94a18b8353f5"
+      }
+    },
+    "owner": "camilob",
+    "runtimeVersion": {
+      "policy": "appVersion"
+    },
+    "updates": {
+      "url": "https://u.expo.dev/01a42c38-7d8f-4395-883b-94a18b8353f5"
+    }
+  }
+}

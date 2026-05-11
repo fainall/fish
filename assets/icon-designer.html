@@ -1,0 +1,405 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>AquaManager · Luxury Icon System</title>
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+body{background:#EDF6FB;font-family:-apple-system,'SF Pro Display','Segoe UI',sans-serif;color:#0C1E2D;padding:48px 40px 80px;min-height:100vh}
+.hdr{text-align:center;margin-bottom:60px}
+.hdr-eye{font-size:11px;font-weight:700;letter-spacing:2.5px;text-transform:uppercase;color:#0090BF;margin-bottom:12px}
+.hdr-t{font-size:44px;font-weight:800;letter-spacing:-2px;color:#0C1E2D;margin-bottom:8px}
+.hdr-s{font-size:16px;color:#6A9AB8}
+.sec{margin-bottom:52px}
+.sec-lbl{font-size:10px;font-weight:700;letter-spacing:2.5px;text-transform:uppercase;color:#6A9AB8;display:flex;align-items:center;gap:14px;margin-bottom:28px}
+.sec-lbl::after{content:'';flex:1;height:1px;background:#C5DDE9}
+.app-row{display:flex;gap:36px;align-items:flex-end;flex-wrap:wrap}
+.app-item{display:flex;flex-direction:column;align-items:center;gap:12px}
+.app-item svg{display:block}
+.sz{font-size:11px;font-weight:700;color:#2E6680;text-align:center}
+.sz-u{font-size:10px;color:#6A9AB8;margin-top:2px}
+.btn{display:inline-flex;align-items:center;gap:6px;background:#0090BF;color:#fff;border:none;border-radius:9px;padding:8px 16px;font-size:11px;font-weight:700;cursor:pointer;transition:all .15s;font-family:inherit}
+.btn:hover{background:#006E99;transform:translateY(-1px);box-shadow:0 4px 14px rgba(0,144,191,.3)}
+.btn-g{background:transparent;color:#0090BF;border:1.5px solid rgba(0,144,191,.35)}
+.btn-g:hover{background:#0090BF;color:#fff;border-color:#0090BF}
+.tab-grid{display:grid;grid-template-columns:repeat(8,1fr);gap:12px}
+.tc{background:#fff;border:1px solid #C5DDE9;border-radius:18px;padding:20px 10px 14px;display:flex;flex-direction:column;align-items:center;gap:10px;cursor:pointer;box-shadow:0 2px 10px rgba(8,48,80,.06);transition:all .2s}
+.tc:hover{box-shadow:0 6px 22px rgba(0,144,191,.15);border-color:#0090BF;transform:translateY(-3px)}
+.tc.on{background:linear-gradient(145deg,#0090BF,#005E80);border-color:transparent;box-shadow:0 8px 28px rgba(0,144,191,.38)}
+.tc .lbl{font-size:9px;font-weight:700;color:#2E6680;letter-spacing:.4px;text-align:center}
+.tc.on .lbl{color:rgba(255,255,255,.88)}
+.tb-wrap{background:#fff;border:1px solid #C5DDE9;border-radius:22px;padding:10px 20px 14px;display:flex;justify-content:space-between;align-items:center;max-width:720px;margin:32px auto 0;box-shadow:0 6px 28px rgba(8,48,80,.10)}
+.tb-i{display:flex;flex-direction:column;align-items:center;gap:4px;padding:6px 10px;border-radius:12px;transition:all .2s}
+.tb-i.on{background:rgba(0,144,191,.08)}
+.tb-i span{font-size:8px;font-weight:700;color:#6A9AB8;letter-spacing:.3px}
+.tb-i.on span{color:#0090BF}
+.dl-row{margin-top:20px;display:flex;gap:12px;flex-wrap:wrap}
+.exp-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(160px,1fr));gap:14px}
+.exp-c{background:#fff;border:1px solid #C5DDE9;border-radius:16px;padding:20px;text-align:center;box-shadow:0 2px 8px rgba(8,48,80,.05)}
+.exp-c svg{display:block;margin:0 auto}
+.exp-n{font-size:13px;font-weight:700;color:#0C1E2D;margin:10px 0 3px}
+.exp-d{font-size:11px;color:#6A9AB8;margin-bottom:12px}
+</style>
+</head>
+<body>
+
+<div class="hdr">
+  <div class="hdr-eye">Luxury Icon System · 2026</div>
+  <h1 class="hdr-t">AquaManager</h1>
+  <p class="hdr-s">Sunlit Reef Edition — Betta aurata mark</p>
+</div>
+
+<!-- ══════════════════════════════════════════════════════
+     APP ICON
+     ══════════════════════════════════════════════════════ -->
+<div class="sec">
+  <div class="sec-lbl">App Icon — "Betta Aurata"</div>
+  <div class="app-row">
+
+    <!-- 240 display / 1024 export -->
+    <div class="app-item">
+      <svg id="appSVG" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1024 1024" width="240" height="240"
+        style="border-radius:22%;box-shadow:0 20px 60px rgba(2,11,24,.52),0 0 0 1px rgba(212,175,55,.18)">
+        <defs>
+          <radialGradient id="bg" cx="38%" cy="28%" r="78%">
+            <stop offset="0%" stop-color="#104268"/>
+            <stop offset="50%" stop-color="#071C30"/>
+            <stop offset="100%" stop-color="#020B18"/>
+          </radialGradient>
+          <linearGradient id="gd" x1="10%" y1="0%" x2="90%" y2="100%">
+            <stop offset="0%" stop-color="#F8EF90"/>
+            <stop offset="45%" stop-color="#D4AF37"/>
+            <stop offset="100%" stop-color="#8B6010"/>
+          </linearGradient>
+          <linearGradient id="gf" x1="0%" y1="0%" x2="100%" y2="100%">
+            <stop offset="0%" stop-color="#F2DF70" stop-opacity=".95"/>
+            <stop offset="100%" stop-color="#C08010" stop-opacity=".65"/>
+          </linearGradient>
+          <radialGradient id="gl" cx="35%" cy="18%" r="58%">
+            <stop offset="0%" stop-color="white" stop-opacity=".10"/>
+            <stop offset="100%" stop-color="white" stop-opacity="0"/>
+          </radialGradient>
+          <filter id="sg" x="-15%" y="-15%" width="130%" height="130%">
+            <feGaussianBlur stdDeviation="6" result="b"/>
+            <feMerge><feMergeNode in="b"/><feMergeNode in="SourceGraphic"/></feMerge>
+          </filter>
+        </defs>
+        <rect width="1024" height="1024" rx="220" fill="url(#bg)"/>
+        <g opacity=".035"><polygon points="180,0 520,0 1024,1024 680,1024" fill="white"/><polygon points="380,0 500,0 900,1024 760,1024" fill="white"/></g>
+        <ellipse cx="512" cy="560" rx="370" ry="200" fill="none" stroke="#00C8E0" stroke-width="1.5" opacity=".07"/>
+        <ellipse cx="512" cy="580" rx="280" ry="140" fill="none" stroke="#00C8E0" stroke-width="1" opacity=".05"/>
+        <circle cx="512" cy="512" r="435" fill="none" stroke="url(#gd)" stroke-width="3" opacity=".28"/>
+        <path d="M400 510C345 462 262 420 210 372 188 440 184 558 214 630 268 580 348 545 400 516Z" fill="url(#gf)" filter="url(#sg)"/>
+        <path d="M400 510C345 462 262 420 210 372Q196 395 202 418C255 424 336 458 386 497Z" fill="url(#gd)" opacity=".45"/>
+        <path d="M400 516C348 545 268 580 214 630Q228 645 250 638C300 605 360 565 396 524Z" fill="url(#gd)" opacity=".38"/>
+        <path d="M458 464C442 412 426 358 448 308 474 328 502 358 524 390 540 412 540 445 527 464Z" fill="url(#gf)" filter="url(#sg)"/>
+        <path d="M458 464C442 412 426 358 448 308Q455 312 462 320C468 358 476 398 494 440Z" fill="url(#gd)" opacity=".28"/>
+        <path d="M492 568C478 612 470 656 488 692 515 672 538 648 538 620 538 596 524 574 506 568Z" fill="url(#gf)" opacity=".72"/>
+        <path d="M558 508C562 478 600 455 632 450 636 466 628 490 614 508 602 522 578 530 560 524Z" fill="url(#gf)" opacity=".55"/>
+        <path d="M430 468C482 448 548 448 596 468 644 488 664 514 650 542 636 568 596 582 544 582 490 582 440 570 406 546 372 520 376 490 430 468Z" fill="url(#gd)" filter="url(#sg)"/>
+        <path d="M448 466C498 451 560 450 600 468 568 458 510 456 456 470Z" fill="white" opacity=".32"/>
+        <path d="M430 558C470 572 520 576 560 568 520 578 468 576 430 558Z" fill="white" opacity=".10"/>
+        <g opacity=".14" fill="none" stroke="#8B5E10" stroke-width="1.2" stroke-linecap="round">
+          <path d="M475 480Q498 470 520 480"/><path d="M500 498Q523 487 546 497"/>
+          <path d="M468 514Q492 504 516 514"/><path d="M512 465Q534 455 556 465"/>
+          <path d="M544 480Q565 471 582 481"/>
+        </g>
+        <path d="M588 474Q567 513 584 548" fill="none" stroke="#8B5E10" stroke-width="3.5" opacity=".42" stroke-linecap="round"/>
+        <circle cx="632" cy="510" r="19" fill="white" opacity=".96"/>
+        <circle cx="634" cy="510" r="12" fill="#120800"/>
+        <circle cx="634" cy="510" r="16" fill="none" stroke="#D4AF37" stroke-width="2" opacity=".65"/>
+        <circle cx="628" cy="504" r="4.5" fill="white" opacity=".85"/>
+        <circle cx="640" cy="516" r="2" fill="white" opacity=".35"/>
+        <rect width="1024" height="1024" rx="220" fill="url(#gl)"/>
+        <g fill="white" opacity=".08">
+          <circle cx="295" cy="195" r="7"/><circle cx="375" cy="165" r="4.5"/>
+          <circle cx="708" cy="178" r="6"/><circle cx="790" cy="248" r="4"/>
+          <circle cx="245" cy="348" r="5"/><circle cx="835" cy="695" r="4.5"/>
+          <circle cx="760" cy="808" r="6"/><circle cx="140" cy="720" r="3"/>
+        </g>
+      </svg>
+      <div class="sz">1024 × 1024<div class="sz-u">App Store / Google Play</div></div>
+      <button class="btn" onclick="dlIcon(1024,'icon')">↓ icon.png</button>
+    </div>
+
+    <!-- 152 display / 512 -->
+    <div class="app-item">
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1024 1024" width="152" height="152"
+        style="border-radius:22%;box-shadow:0 12px 36px rgba(2,11,24,.38)">
+        <defs><radialGradient id="bg2" cx="38%" cy="28%" r="78%"><stop offset="0%" stop-color="#104268"/><stop offset="50%" stop-color="#071C30"/><stop offset="100%" stop-color="#020B18"/></radialGradient><linearGradient id="gd2" x1="10%" y1="0%" x2="90%" y2="100%"><stop offset="0%" stop-color="#F8EF90"/><stop offset="45%" stop-color="#D4AF37"/><stop offset="100%" stop-color="#8B6010"/></linearGradient><linearGradient id="gf2" x1="0%" y1="0%" x2="100%" y2="100%"><stop offset="0%" stop-color="#F2DF70" stop-opacity=".95"/><stop offset="100%" stop-color="#C08010" stop-opacity=".65"/></linearGradient><radialGradient id="gl2" cx="35%" cy="18%" r="58%"><stop offset="0%" stop-color="white" stop-opacity=".10"/><stop offset="100%" stop-color="white" stop-opacity="0"/></radialGradient></defs>
+        <rect width="1024" height="1024" rx="220" fill="url(#bg2)"/><g opacity=".035"><polygon points="180,0 520,0 1024,1024 680,1024" fill="white"/></g><circle cx="512" cy="512" r="435" fill="none" stroke="url(#gd2)" stroke-width="3" opacity=".28"/>
+        <path d="M400 510C345 462 262 420 210 372 188 440 184 558 214 630 268 580 348 545 400 516Z" fill="url(#gf2)"/>
+        <path d="M458 464C442 412 426 358 448 308 474 328 502 358 524 390 540 412 540 445 527 464Z" fill="url(#gf2)"/>
+        <path d="M492 568C478 612 470 656 488 692 515 672 538 648 538 620 538 596 524 574 506 568Z" fill="url(#gf2)" opacity=".72"/>
+        <path d="M430 468C482 448 548 448 596 468 644 488 664 514 650 542 636 568 596 582 544 582 490 582 440 570 406 546 372 520 376 490 430 468Z" fill="url(#gd2)"/>
+        <path d="M448 466C498 451 560 450 600 468 568 458 510 456 456 470Z" fill="white" opacity=".32"/>
+        <circle cx="632" cy="510" r="19" fill="white" opacity=".96"/><circle cx="634" cy="510" r="12" fill="#120800"/><circle cx="628" cy="504" r="4.5" fill="white" opacity=".85"/>
+        <rect width="1024" height="1024" rx="220" fill="url(#gl2)"/>
+      </svg>
+      <div class="sz">512 × 512<div class="sz-u">Web / PWA</div></div>
+    </div>
+
+    <!-- 96 / 192 -->
+    <div class="app-item">
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1024 1024" width="96" height="96"
+        style="border-radius:22%;box-shadow:0 8px 24px rgba(2,11,24,.32)">
+        <defs><radialGradient id="bg3" cx="38%" cy="28%" r="78%"><stop offset="0%" stop-color="#104268"/><stop offset="50%" stop-color="#071C30"/><stop offset="100%" stop-color="#020B18"/></radialGradient><linearGradient id="gd3" x1="10%" y1="0%" x2="90%" y2="100%"><stop offset="0%" stop-color="#F8EF90"/><stop offset="45%" stop-color="#D4AF37"/><stop offset="100%" stop-color="#8B6010"/></linearGradient><linearGradient id="gf3" x1="0%" y1="0%" x2="100%" y2="100%"><stop offset="0%" stop-color="#F2DF70" stop-opacity=".95"/><stop offset="100%" stop-color="#C08010" stop-opacity=".65"/></linearGradient></defs>
+        <rect width="1024" height="1024" rx="220" fill="url(#bg3)"/>
+        <path d="M400 510C345 462 262 420 210 372 188 440 184 558 214 630 268 580 348 545 400 516Z" fill="url(#gf3)"/>
+        <path d="M458 464C442 412 426 358 448 308 474 328 502 358 524 390 540 412 540 445 527 464Z" fill="url(#gf3)"/>
+        <path d="M430 468C482 448 548 448 596 468 644 488 664 514 650 542 636 568 596 582 544 582 490 582 440 570 406 546 372 520 376 490 430 468Z" fill="url(#gd3)"/>
+        <circle cx="632" cy="510" r="19" fill="white" opacity=".96"/><circle cx="634" cy="510" r="12" fill="#120800"/><circle cx="628" cy="504" r="4.5" fill="white" opacity=".85"/>
+      </svg>
+      <div class="sz">192 × 192<div class="sz-u">Android Launcher</div></div>
+    </div>
+
+    <!-- 60 -->
+    <div class="app-item">
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1024 1024" width="60" height="60"
+        style="border-radius:22%;box-shadow:0 4px 16px rgba(2,11,24,.28)">
+        <defs><radialGradient id="bg4" cx="38%" cy="28%" r="78%"><stop offset="0%" stop-color="#104268"/><stop offset="50%" stop-color="#071C30"/><stop offset="100%" stop-color="#020B18"/></radialGradient><linearGradient id="gd4" x1="10%" y1="0%" x2="90%" y2="100%"><stop offset="0%" stop-color="#F8EF90"/><stop offset="45%" stop-color="#D4AF37"/><stop offset="100%" stop-color="#8B6010"/></linearGradient><linearGradient id="gf4" x1="0%" y1="0%" x2="100%" y2="100%"><stop offset="0%" stop-color="#F2DF70" stop-opacity=".95"/><stop offset="100%" stop-color="#C08010" stop-opacity=".65"/></linearGradient></defs>
+        <rect width="1024" height="1024" rx="220" fill="url(#bg4)"/>
+        <path d="M400 510C345 462 262 420 210 372 188 440 184 558 214 630 268 580 348 545 400 516Z" fill="url(#gf4)"/>
+        <path d="M458 464C442 412 426 358 448 308 474 328 502 358 524 390 540 412 540 445 527 464Z" fill="url(#gf4)"/>
+        <path d="M430 468C482 448 548 448 596 468 644 488 664 514 650 542 636 568 596 582 544 582 490 582 440 570 406 546 372 520 376 490 430 468Z" fill="url(#gd4)"/>
+        <circle cx="632" cy="510" r="18" fill="white"/><circle cx="634" cy="510" r="11" fill="#120800"/>
+      </svg>
+      <div class="sz">60 × 60<div class="sz-u">iOS Notification</div></div>
+    </div>
+
+  </div>
+</div>
+
+<!-- ADAPTIVE -->
+<div class="sec">
+  <div class="sec-lbl">Adaptive Icon — Android</div>
+  <div class="app-row">
+    <div class="app-item">
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1024 1024" width="160" height="160"
+        style="border-radius:50%;box-shadow:0 12px 36px rgba(0,60,120,.35)">
+        <defs><linearGradient id="abg" x1="0%" y1="0%" x2="100%" y2="100%"><stop offset="0%" stop-color="#0090BF"/><stop offset="100%" stop-color="#003A5C"/></linearGradient><linearGradient id="agd" x1="10%" y1="0%" x2="90%" y2="100%"><stop offset="0%" stop-color="#F8EF90"/><stop offset="45%" stop-color="#D4AF37"/><stop offset="100%" stop-color="#8B6010"/></linearGradient><linearGradient id="agf" x1="0%" y1="0%" x2="100%" y2="100%"><stop offset="0%" stop-color="#F2DF70" stop-opacity=".95"/><stop offset="100%" stop-color="#C08010" stop-opacity=".65"/></linearGradient></defs>
+        <rect width="1024" height="1024" fill="url(#abg)"/>
+        <path d="M400 510C345 462 262 420 210 372 188 440 184 558 214 630 268 580 348 545 400 516Z" fill="url(#agf)"/>
+        <path d="M458 464C442 412 426 358 448 308 474 328 502 358 524 390 540 412 540 445 527 464Z" fill="url(#agf)"/>
+        <path d="M492 568C478 612 470 656 488 692 515 672 538 648 538 620 538 596 524 574 506 568Z" fill="url(#agf)" opacity=".72"/>
+        <path d="M430 468C482 448 548 448 596 468 644 488 664 514 650 542 636 568 596 582 544 582 490 582 440 570 406 546 372 520 376 490 430 468Z" fill="url(#agd)"/>
+        <path d="M448 466C498 451 560 450 600 468 568 458 510 456 456 470Z" fill="white" opacity=".32"/>
+        <circle cx="632" cy="510" r="19" fill="white" opacity=".96"/><circle cx="634" cy="510" r="12" fill="#120800"/><circle cx="628" cy="504" r="4.5" fill="white" opacity=".85"/>
+      </svg>
+      <div class="sz">Circular<div class="sz-u">Android Circle</div></div>
+      <button class="btn" onclick="dlAdaptive(1024,'adaptive-icon')">↓ adaptive-icon.png</button>
+    </div>
+    <div class="app-item">
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1024 1024" width="160" height="160"
+        style="border-radius:24px;box-shadow:0 12px 36px rgba(0,60,120,.35)">
+        <defs><linearGradient id="abg2" x1="0%" y1="0%" x2="100%" y2="100%"><stop offset="0%" stop-color="#0090BF"/><stop offset="100%" stop-color="#003A5C"/></linearGradient><linearGradient id="agd2" x1="10%" y1="0%" x2="90%" y2="100%"><stop offset="0%" stop-color="#F8EF90"/><stop offset="45%" stop-color="#D4AF37"/><stop offset="100%" stop-color="#8B6010"/></linearGradient><linearGradient id="agf2" x1="0%" y1="0%" x2="100%" y2="100%"><stop offset="0%" stop-color="#F2DF70" stop-opacity=".95"/><stop offset="100%" stop-color="#C08010" stop-opacity=".65"/></linearGradient></defs>
+        <rect width="1024" height="1024" fill="url(#abg2)"/>
+        <path d="M400 510C345 462 262 420 210 372 188 440 184 558 214 630 268 580 348 545 400 516Z" fill="url(#agf2)"/>
+        <path d="M458 464C442 412 426 358 448 308 474 328 502 358 524 390 540 412 540 445 527 464Z" fill="url(#agf2)"/>
+        <path d="M430 468C482 448 548 448 596 468 644 488 664 514 650 542 636 568 596 582 544 582 490 582 440 570 406 546 372 520 376 490 430 468Z" fill="url(#agd2)"/>
+        <circle cx="632" cy="510" r="19" fill="white" opacity=".96"/><circle cx="634" cy="510" r="12" fill="#120800"/><circle cx="628" cy="504" r="4.5" fill="white" opacity=".85"/>
+      </svg>
+      <div class="sz">Rounded Square<div class="sz-u">Android Square</div></div>
+    </div>
+  </div>
+</div>
+
+<!-- TAB ICONS -->
+<div class="sec">
+  <div class="sec-lbl">Tab Bar Icons</div>
+  <div class="tab-grid">
+
+    <div class="tc on" data-i="0">
+      <svg viewBox="0 0 24 24" width="32" height="32" fill="none" stroke="white" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round">
+        <path d="M3 10.5L12 3l9 7.5V21a1 1 0 01-1 1h-5v-6H9v6H4a1 1 0 01-1-1z"/>
+        <circle cx="12" cy="14" r="1.4" fill="white" stroke="none"/>
+      </svg>
+      <span class="lbl">Inicio</span>
+    </div>
+
+    <div class="tc" data-i="1">
+      <svg viewBox="0 0 24 24" width="32" height="32" fill="none" stroke="#0090BF" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round">
+        <rect x="2" y="5" width="20" height="15" rx="2.5"/>
+        <path d="M2 11q3-2 6 0t6 0 4 0"/>
+        <ellipse cx="12" cy="15.5" rx="3" ry="1.8" fill="#0090BF" opacity=".4" stroke="none"/>
+        <path d="M8.5 15.5C7.5 14.8 6.5 14.8 6 15.5C6.5 16.2 7.5 16.2 8.5 15.5Z" fill="#0090BF" stroke="none"/>
+      </svg>
+      <span class="lbl">Acuario</span>
+    </div>
+
+    <div class="tc" data-i="2">
+      <svg viewBox="0 0 24 24" width="32" height="32" fill="#0090BF" stroke="none">
+        <path d="M8.5 9.5C10.5 8 14.5 8 16.8 9.8 18.6 11.2 19 13 17.8 14.6 16.2 16.6 12 17.2 9 16 6.8 15 6 13 8.5 9.5Z"/>
+        <path d="M8 11.5C6 9.5 3.5 8 2 7 2 9.5 2 15 2 17 3.5 16 6 14.5 8.5 12.5Z"/>
+        <path d="M11 8.5C10.5 6.5 11.2 4.5 12.5 4 13.5 5 14.2 7 13.5 8.8Z" opacity=".75"/>
+        <circle cx="16.5" cy="12" r="1.8" fill="white"/>
+        <circle cx="16.8" cy="12" r="1"/>
+        <circle cx="16.3" cy="11.5" r=".4" fill="white"/>
+      </svg>
+      <span class="lbl">Peces</span>
+    </div>
+
+    <div class="tc" data-i="3">
+      <svg viewBox="0 0 24 24" width="32" height="32" fill="#0090BF" stroke="none">
+        <path d="M12 2.5C12 2.5 4.5 11.5 4.5 16 4.5 20 7.9 22.5 12 22.5 16.1 22.5 19.5 20 19.5 16 19.5 11.5 12 2.5 12 2.5Z"/>
+        <path d="M7.5 16.5Q9.5 14.5 12 16.5Q14.5 18.5 16.5 16.5" fill="none" stroke="white" stroke-width="1.2" stroke-linecap="round"/>
+        <path d="M8.5 19Q10.2 17.5 12 19Q13.8 20.5 15.5 19" fill="none" stroke="white" stroke-width="1" stroke-linecap="round" opacity=".5"/>
+      </svg>
+      <span class="lbl">Agua</span>
+    </div>
+
+    <div class="tc" data-i="4">
+      <svg viewBox="0 0 24 24" width="32" height="32" fill="none" stroke="#0090BF" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round">
+        <rect x="4" y="3" width="16" height="19" rx="3"/>
+        <path d="M9 2v2.5M15 2v2.5"/>
+        <path d="M8 10l2 2 4-4"/>
+        <line x1="8" y1="15" x2="16" y2="15"/>
+        <line x1="8" y1="18.5" x2="13.5" y2="18.5"/>
+      </svg>
+      <span class="lbl">Tareas</span>
+    </div>
+
+    <div class="tc" data-i="5">
+      <svg viewBox="0 0 24 24" width="32" height="32" fill="#0090BF" stroke="none">
+        <path d="M4 8.5C5.2 7.5 7.5 7.5 8.8 8.5 9.8 9.3 9.8 10.7 8.8 11.5 7.5 12.5 5.2 12.5 4 11.5 3 10.7 3 9.3 4 8.5Z"/>
+        <path d="M3.5 10C2.5 9.3 1.5 9.3 1 10 1.5 10.7 2.5 10.7 3.5 10Z"/>
+        <path d="M20 8.5C18.8 7.5 16.5 7.5 15.2 8.5 14.2 9.3 14.2 10.7 15.2 11.5 16.5 12.5 18.8 12.5 20 11.5 21 10.7 21 9.3 20 8.5Z"/>
+        <path d="M20.5 10C21.5 9.3 22.5 9.3 23 10 22.5 10.7 21.5 10.7 20.5 10Z"/>
+        <circle cx="12" cy="9" r="1.3" opacity=".9"/>
+        <circle cx="12" cy="14" r="1.6"/>
+        <circle cx="9" cy="16.5" r="1.3" opacity=".8"/>
+        <circle cx="15" cy="16.5" r="1.3" opacity=".8"/>
+        <circle cx="12" cy="19" r="1.8" opacity=".6"/>
+      </svg>
+      <span class="lbl">Puestas</span>
+    </div>
+
+    <div class="tc" data-i="6">
+      <svg viewBox="0 0 24 24" width="32" height="32" fill="none" stroke="#0090BF" stroke-width="1.6" stroke-linecap="round">
+        <circle cx="12" cy="5" r="2.5"/>
+        <circle cx="5" cy="17" r="2.5"/>
+        <circle cx="19" cy="17" r="2.5"/>
+        <line x1="12" y1="7.5" x2="5.8" y2="14.5"/>
+        <line x1="12" y1="7.5" x2="18.2" y2="14.5"/>
+        <line x1="7.5" y1="17" x2="16.5" y2="17"/>
+      </svg>
+      <span class="lbl">Red</span>
+    </div>
+
+    <div class="tc" data-i="7">
+      <svg viewBox="0 0 24 24" width="32" height="32" fill="none" stroke="#0090BF" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round">
+        <path d="M21 15a2 2 0 01-2 2H7l-4 4V5a2 2 0 012-2h14a2 2 0 012 2z"/>
+        <path d="M9.5 9.5C10.5 8.8 12.5 8.8 13.5 9.5 14.3 10 14.3 11 13.5 11.5 12.5 12.2 10.5 12.2 9.5 11.5 8.7 11 8.7 10 9.5 9.5Z" fill="#0090BF" stroke="none"/>
+        <path d="M9.2 10.5C8.3 9.9 7.3 9.9 6.8 10.5 7.3 11.1 8.3 11.1 9.2 10.5Z" fill="#0090BF" stroke="none"/>
+      </svg>
+      <span class="lbl">Chat</span>
+    </div>
+
+  </div>
+
+  <!-- Tab bar mockup -->
+  <div class="tb-wrap">
+    <div class="tb-i on"><svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="#0090BF" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M3 10.5L12 3l9 7.5V21a1 1 0 01-1 1h-5v-6H9v6H4a1 1 0 01-1-1z"/><circle cx="12" cy="14" r="1.2" fill="#0090BF" stroke="none"/></svg><span>Inicio</span></div>
+    <div class="tb-i"><svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="#6A9AB8" stroke-width="1.6" stroke-linecap="round"><rect x="2" y="5" width="20" height="15" rx="2.5"/><path d="M2 11q3-2 6 0t6 0 4 0"/></svg><span>Acuario</span></div>
+    <div class="tb-i"><svg viewBox="0 0 24 24" width="20" height="20" fill="#6A9AB8" stroke="none"><path d="M8.5 9.5C10.5 8 14.5 8 16.8 9.8 18.6 11.2 19 13 17.8 14.6 16.2 16.6 12 17.2 9 16 6.8 15 6 13 8.5 9.5Z"/><path d="M8 11.5C6 9.5 3.5 8 2 7 2 9.5 2 15 2 17 3.5 16 6 14.5 8.5 12.5Z"/></svg><span>Peces</span></div>
+    <div class="tb-i"><svg viewBox="0 0 24 24" width="20" height="20" fill="#6A9AB8"><path d="M12 2.5C12 2.5 4.5 11.5 4.5 16 4.5 20 7.9 22.5 12 22.5 16.1 22.5 19.5 20 19.5 16 19.5 11.5 12 2.5 12 2.5Z"/></svg><span>Agua</span></div>
+    <div class="tb-i"><svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="#6A9AB8" stroke-width="1.6" stroke-linecap="round"><rect x="4" y="3" width="16" height="19" rx="3"/><path d="M8 10l2 2 4-4"/><line x1="8" y1="15" x2="16" y2="15"/></svg><span>Tareas</span></div>
+    <div class="tb-i"><svg viewBox="0 0 24 24" width="20" height="20" fill="#6A9AB8"><path d="M4 8.5C5.2 7.5 7.5 7.5 8.8 8.5 9.8 9.3 9.8 10.7 8.8 11.5 7.5 12.5 5.2 12.5 4 11.5 3 10.7 3 9.3 4 8.5Z"/><path d="M20 8.5C18.8 7.5 16.5 7.5 15.2 8.5 14.2 9.3 14.2 10.7 15.2 11.5 16.5 12.5 18.8 12.5 20 11.5 21 10.7 21 9.3 20 8.5Z"/><circle cx="12" cy="14" r="1.5"/></svg><span>Puestas</span></div>
+    <div class="tb-i"><svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="#6A9AB8" stroke-width="1.6" stroke-linecap="round"><circle cx="12" cy="5" r="2.5"/><circle cx="5" cy="17" r="2.5"/><circle cx="19" cy="17" r="2.5"/><line x1="12" y1="7.5" x2="5.8" y2="14.5"/><line x1="12" y1="7.5" x2="18.2" y2="14.5"/><line x1="7.5" y1="17" x2="16.5" y2="17"/></svg><span>Red</span></div>
+    <div class="tb-i"><svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="#6A9AB8" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15a2 2 0 01-2 2H7l-4 4V5a2 2 0 012-2h14a2 2 0 012 2z"/></svg><span>Chat</span></div>
+  </div>
+</div>
+
+<!-- EXPORT -->
+<div class="sec">
+  <div class="sec-lbl">Export PNG Assets</div>
+  <div class="dl-row">
+    <button class="btn" style="font-size:13px;padding:11px 22px" onclick="dlIcon(1024,'icon')">↓ icon.png (1024×1024)</button>
+    <button class="btn" style="font-size:13px;padding:11px 22px" onclick="dlAdaptive(1024,'adaptive-icon')">↓ adaptive-icon.png</button>
+    <button class="btn" style="font-size:13px;padding:11px 22px" onclick="dlIcon(32,'favicon')">↓ favicon.png (32×32)</button>
+    <button class="btn" style="font-size:13px;padding:11px 22px" onclick="dlIcon(200,'splash-icon')">↓ splash-icon.png</button>
+    <button class="btn" style="font-size:13px;padding:11px 22px;background:#2E6680" onclick="dlAll()">⬇ Exportar todos</button>
+    <button class="btn btn-g" style="font-size:13px;padding:11px 22px" onclick="dlSVG()">↓ SVG fuente</button>
+  </div>
+</div>
+
+<script>
+// Download app icon SVG → PNG
+function dlIcon(size, fname) {
+  const svg = document.getElementById('appSVG');
+  const s = new XMLSerializer();
+  const clone = svg.cloneNode(true);
+  clone.removeAttribute('style');
+  clone.setAttribute('width', size);
+  clone.setAttribute('height', size);
+  const str = s.serializeToString(clone);
+  const blob = new Blob([str], {type:'image/svg+xml'});
+  const url = URL.createObjectURL(blob);
+  const img = new Image();
+  img.onload = () => {
+    const cv = document.createElement('canvas');
+    cv.width = size; cv.height = size;
+    cv.getContext('2d').drawImage(img, 0, 0);
+    URL.revokeObjectURL(url);
+    const a = document.createElement('a');
+    a.href = cv.toDataURL('image/png');
+    a.download = fname + '.png'; a.click();
+  };
+  img.src = url;
+}
+
+function dlAdaptive(size, fname) {
+  // Build a fresh SVG with teal background + fish
+  const svgStr = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1024 1024" width="${size}" height="${size}"><defs><linearGradient id="ab" x1="0%" y1="0%" x2="100%" y2="100%"><stop offset="0%" stop-color="#0090BF"/><stop offset="100%" stop-color="#003A5C"/></linearGradient><linearGradient id="ag" x1="10%" y1="0%" x2="90%" y2="100%"><stop offset="0%" stop-color="#F8EF90"/><stop offset="45%" stop-color="#D4AF37"/><stop offset="100%" stop-color="#8B6010"/></linearGradient><linearGradient id="af" x1="0%" y1="0%" x2="100%" y2="100%"><stop offset="0%" stop-color="#F2DF70" stop-opacity=".95"/><stop offset="100%" stop-color="#C08010" stop-opacity=".65"/></linearGradient></defs><rect width="1024" height="1024" fill="url(#ab)"/><path d="M400 510C345 462 262 420 210 372 188 440 184 558 214 630 268 580 348 545 400 516Z" fill="url(#af)"/><path d="M458 464C442 412 426 358 448 308 474 328 502 358 524 390 540 412 540 445 527 464Z" fill="url(#af)"/><path d="M492 568C478 612 470 656 488 692 515 672 538 648 538 620 538 596 524 574 506 568Z" fill="url(#af)" opacity=".72"/><path d="M430 468C482 448 548 448 596 468 644 488 664 514 650 542 636 568 596 582 544 582 490 582 440 570 406 546 372 520 376 490 430 468Z" fill="url(#ag)"/><path d="M448 466C498 451 560 450 600 468 568 458 510 456 456 470Z" fill="white" opacity=".32"/><circle cx="632" cy="510" r="19" fill="white" opacity=".96"/><circle cx="634" cy="510" r="12" fill="#120800"/><circle cx="628" cy="504" r="4.5" fill="white" opacity=".85"/></svg>`;
+  const blob = new Blob([svgStr], {type:'image/svg+xml'});
+  const url = URL.createObjectURL(blob);
+  const img = new Image();
+  img.onload = () => {
+    const cv = document.createElement('canvas');
+    cv.width = size; cv.height = size;
+    cv.getContext('2d').drawImage(img, 0, 0);
+    URL.revokeObjectURL(url);
+    const a = document.createElement('a');
+    a.href = cv.toDataURL('image/png');
+    a.download = fname + '.png'; a.click();
+  };
+  img.src = url;
+}
+
+async function dlAll() {
+  dlIcon(1024,'icon');
+  await new Promise(r=>setTimeout(r,500));
+  dlAdaptive(1024,'adaptive-icon');
+  await new Promise(r=>setTimeout(r,500));
+  dlIcon(32,'favicon');
+  await new Promise(r=>setTimeout(r,500));
+  dlIcon(200,'splash-icon');
+}
+
+function dlSVG() {
+  const svg = document.getElementById('appSVG');
+  const s = new XMLSerializer();
+  const clone = svg.cloneNode(true);
+  clone.removeAttribute('style');
+  clone.setAttribute('xmlns','http://www.w3.org/2000/svg');
+  const str = s.serializeToString(clone);
+  const blob = new Blob([str], {type:'image/svg+xml'});
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url; a.download = 'aquamanager-icon.svg'; a.click();
+}
+
+// Tab interactivity
+const C_ON  = {stroke:'white', fill:'white'};
+const C_OFF = {stroke:'#0090BF', fill:'#0090BF'};
+
+document.querySelectorAll('.tc').forEach(card => {
+  card.addEventListener('click', () => {
+    document.querySelectorAll('.tc').forEach(c => c.classList.remove('on'));
+    card.classList.add('on');
+  });
+});
+</script>
+</body>
+</html>

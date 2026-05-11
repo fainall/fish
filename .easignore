@@ -1,0 +1,31 @@
+# Build outputs
+node_modules/
+.expo/
+dist/
+web-build/
+android/
+ios/
+
+# Claude Code / agent files (no necesarios para el build)
+.agents/
+.claude/
+.cursor/
+.vscode/
+
+# Git
+.git/
+.gitignore
+
+# Logs
+*.log
+npm-debug.*
+yarn-debug.*
+yarn-error.*
+
+# Env files (las variables se inyectan vía EAS Secrets)
+.env.local
+.env.*.local
+
+# OS
+.DS_Store
+Thumbs.db
