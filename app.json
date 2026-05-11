@@ -1,7 +1,7 @@
 {
   "expo": {
     "name": "Aquaria",
-    "slug": "aquaria",
+    "slug": "aquamanager",
     "scheme": "aquaria",
     "version": "1.0.0",
     "orientation": "portrait",
@@ -11,7 +11,7 @@
     "splash": {
       "image": "./assets/splash-icon.png",
       "resizeMode": "contain",
-      "backgroundColor": "#070d1a"
+      "backgroundColor": "#000516"
     },
     "ios": {
       "supportsTablet": true,
@@ -20,7 +20,7 @@
     "android": {
       "adaptiveIcon": {
         "foregroundImage": "./assets/adaptive-icon.png",
-        "backgroundColor": "#070d1a"
+        "backgroundColor": "#000516"
       },
       "package": "com.aquaria.app",
       "edgeToEdgeEnabled": false

@@ -20,7 +20,7 @@ export default function SplashScreen() {
   }, []);
 
   return (
-    <LinearGradient colors={['#070d1a', '#0a1628', '#0d1f35']} style={s.root}>
+    <LinearGradient colors={['#000516', '#000516', '#000516']} style={s.root}>
       {/* Full logo — already contains name, tagline, everything */}
       <Animated.View style={{ opacity: logoOpacity, transform: [{ scale: logoScale }] }}>
         <Image
