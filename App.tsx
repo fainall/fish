@@ -47,18 +47,22 @@ export default function App() {
   // Prefetch all fish images in background → instant load on next screens
   useFishImagePrefetch();
 
-  // Check for OTA updates on every app boot — apply immediately if found
+  // Check for OTA updates on every app boot — apply on next launch (no reload loop)
   useEffect(() => {
     if (__DEV__) return;
+    let cancelled = false;
     (async () => {
       try {
         const result = await Updates.checkForUpdateAsync();
-        if (result.isAvailable) {
+        if (result.isAvailable && !cancelled) {
           await Updates.fetchUpdateAsync();
-          await Updates.reloadAsync(); // Force reload with new code
+          // Update is staged — it will activate on the NEXT app launch.
+          // We intentionally do NOT call reloadAsync() here because it can
+          // trigger an infinite reload loop if called unconditionally on boot.
         }
       } catch { /* offline or update server unreachable — silent */ }
     })();
+    return () => { cancelled = true; };
   }, []);
 
   if (!fontsLoaded) {
