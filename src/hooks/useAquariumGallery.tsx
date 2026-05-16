@@ -17,7 +17,6 @@
  */
 import React, { createContext, useContext, useEffect, useState, useCallback } from 'react';
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import * as ImageManipulator from 'expo-image-manipulator';
 import { supabase, IS_DEMO_MODE } from '../services/supabase';
 import { useAuth } from './useAuth';
 
@@ -45,14 +44,19 @@ const COMPRESS_QUALITY = 0.7;
 
 async function compressImage(uri: string): Promise<string> {
   try {
-    const result = await ImageManipulator.manipulateAsync(
+    const IM = await import('expo-image-manipulator');
+    const manipulate = IM.manipulateAsync ?? (IM as any).default?.manipulateAsync;
+    const SaveFormat = IM.SaveFormat ?? (IM as any).default?.SaveFormat;
+    if (!manipulate) return uri;
+    const result = await manipulate(
       uri,
       [{ resize: { width: MAX_DIMENSION } }],
-      { compress: COMPRESS_QUALITY, format: ImageManipulator.SaveFormat.JPEG },
+      { compress: COMPRESS_QUALITY, format: SaveFormat?.JPEG },
     );
     return result.uri;
-  } catch {
-    return uri; // fallback to original if compression fails
+  } catch (e) {
+    console.warn('[Gallery] compressImage fallback to original:', e);
+    return uri;
   }
 }
 
