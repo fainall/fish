@@ -18,6 +18,7 @@ import { getStyleInfo, styleFitScore } from '../../data/aquariumStyles';
 import Aquarium3D from '../../components/aquarium/Aquarium3D';
 import { confirmAction } from '../../utils/confirm';
 import { useFishHistory, REMOVAL_REASON_LABELS, RemovalReason } from '../../hooks/useFishHistory';
+import { calculateStock } from '../../utils/stocking';
 
 // Calcula o estima dimensiones del tanque a partir del volumen (ratio típico 2.5:1:0.75)
 function getDims(aq: AquariumEntry) {
@@ -135,21 +136,26 @@ function FishCard({ fishData, qty, onChangeQty, onRemove, aquariumStyle }: {
   );
 }
 
-// ── Stock calculator ──────────────────────────────────────────────────────────
+// ── Stock calculator (bioload-based) ─────────────────────────────────────────
 function StockCalc({ volumeLiters, fishList }: { volumeLiters: number; fishList: { fishData: Fish; qty: number }[] }) {
-  const totalCm = fishList.reduce((s, { fishData, qty }) => s + fishData.adult_size_cm * qty, 0);
-  const bioload  = volumeLiters > 0 ? Math.min(100, Math.round((totalCm / volumeLiters) * 100)) : 0;
-  const color    = bioload < 50 ? COLORS.success : bioload < 80 ? COLORS.warning : COLORS.error;
-  const label    = bioload < 50 ? 'Espacio disponible' : bioload < 80 ? 'Tanque moderado' : 'Sobrepoblación';
-  const schoolingIssues = fishList.filter(({ fishData, qty }) => fishData.is_schooling && qty < (fishData.schooling_min ?? 6));
+  const result = calculateStock(fishList, volumeLiters);
+  const { stockPercent, severity, label, fishBreakdown, alerts, columnDistribution, totalBioload, tankCapacity } = result;
+
+  const color = severity === 'ok' ? COLORS.success : severity === 'caution' ? COLORS.warning : COLORS.error;
+  const barWidth = Math.min(stockPercent, 100);
+
+  // Pez que más contribuye al bioload
+  const topContributor = fishBreakdown[0];
 
   return (
     <View style={styles.stockCard}>
+      {/* Stats principales */}
       <View style={styles.stockRow}>
         {[
           { label: 'Volumen', value: `${volumeLiters}L`, color: COLORS.primary },
-          { label: 'Total cm', value: `${totalCm}cm`, color: COLORS.textSecondary },
-          { label: 'Carga', value: `${bioload}%`, color },
+          { label: 'Bioload', value: `${totalBioload}`, color: COLORS.textSecondary },
+          { label: 'Capacidad', value: `${tankCapacity}`, color: COLORS.textSecondary },
+          { label: 'Carga', value: `${stockPercent}%`, color },
         ].map(s => (
           <View key={s.label} style={styles.stockStat}>
             <Text style={[styles.stockStatValue, { color: s.color }]}>{s.value}</Text>
@@ -158,19 +164,57 @@ function StockCalc({ volumeLiters, fishList }: { volumeLiters: number; fishList:
         ))}
       </View>
 
+      {/* Barra de progreso */}
       <View style={styles.bioloadTrack}>
-        <View style={[styles.bioloadFill, { width: `${bioload}%` as any, backgroundColor: color }]} />
+        <View style={[styles.bioloadFill, { width: `${barWidth}%` as any, backgroundColor: color }]} />
       </View>
       <Text style={[styles.bioloadLabel, { color }]}>{label}</Text>
 
-      {schoolingIssues.map(({ fishData, qty }) => (
-        <View key={fishData.id} style={styles.schoolingRow}>
-          <Ionicons name="people-outline" size={12} color={COLORS.warning} />
-          <Text style={styles.schoolingRowText}>
-            {fishData.common_name}: tienes {qty}, necesita mín. {fishData.schooling_min ?? 6}
+      {/* Distribución por columna de agua */}
+      {fishList.length > 0 && (
+        <View style={styles.columnDistRow}>
+          <Text style={styles.columnDistTitle}>Columna de agua</Text>
+          <View style={styles.columnBars}>
+            {([
+              { label: '↑ Sup', pct: columnDistribution.top,    color: '#60a5fa' },
+              { label: '↔ Med', pct: columnDistribution.middle, color: '#34d399' },
+              { label: '↓ Fon', pct: columnDistribution.bottom, color: '#fbbf24' },
+            ] as const).map(col => (
+              <View key={col.label} style={styles.columnBarItem}>
+                <View style={styles.columnBarTrack}>
+                  <View style={[styles.columnBarFill, { height: `${Math.max(col.pct, 4)}%` as any, backgroundColor: col.color }]} />
+                </View>
+                <Text style={styles.columnBarLabel}>{col.label}</Text>
+                <Text style={[styles.columnBarPct, { color: col.color }]}>{col.pct}%</Text>
+              </View>
+            ))}
+          </View>
+        </View>
+      )}
+
+      {/* Top contribuidor */}
+      {topContributor && topContributor.bioloadTotal > 1 && (
+        <View style={styles.topContributorRow}>
+          <Ionicons name="trending-up-outline" size={12} color={COLORS.textMuted} />
+          <Text style={styles.topContributorText}>
+            Mayor carga: <Text style={{ fontFamily: FONTS.sansBd, color: COLORS.text }}>{topContributor.commonName}</Text> ({topContributor.sharePct}% del total)
           </Text>
         </View>
-      ))}
+      )}
+
+      {/* Alertas */}
+      {alerts.map((alert, i) => {
+        const alertColor = alert.type === 'critical' ? COLORS.error : alert.type === 'warning' ? COLORS.warning : COLORS.primary;
+        return (
+          <View key={i} style={styles.stockAlertRow}>
+            <Text style={styles.stockAlertIcon}>{alert.icon}</Text>
+            <View style={{ flex: 1 }}>
+              <Text style={[styles.stockAlertTitle, { color: alertColor }]}>{alert.title}</Text>
+              <Text style={styles.stockAlertBody}>{alert.body}</Text>
+            </View>
+          </View>
+        );
+      })}
     </View>
   );
 }
@@ -672,25 +716,27 @@ export default function AquariumScreen({ navigation }: any) {
 
                 {/* ── Quick actions row ── */}
                 {navigation && (
-                  <View style={styles.quickActions}>
-                    {[
-                      { label: 'Agua', icon: 'water', color: COLORS.primary, screen: 'Parameters' },
-                      { label: 'Salud', icon: 'medkit', color: COLORS.error, screen: 'Health' },
-                      { label: 'Calc.', icon: 'calculator', color: '#7209b7', screen: 'Calculator' },
-                      { label: 'Crianza', icon: 'egg', color: COLORS.warning, screen: 'Breeding' },
-                    ].map(({ label, icon, color, screen }) => (
-                      <TouchableOpacity
-                        key={screen}
-                        style={styles.quickAction}
-                        onPress={() => navigation.navigate(screen)}
-                        activeOpacity={0.7}
-                      >
-                        <View style={[styles.quickActionIcon, { backgroundColor: color + '15', width: s(46), height: s(46), borderRadius: s(23) }]}>
-                          <Ionicons name={icon as any} size={s(18)} color={color} />
-                        </View>
-                        <Text style={[styles.quickActionLabel, { color, fontSize: fs(11) }]}>{label}</Text>
-                      </TouchableOpacity>
-                    ))}
+                  <View style={styles.quickActionsCard}>
+                    <View style={styles.quickActions}>
+                      {[
+                        { label: 'Agua', icon: 'water', color: COLORS.primary, screen: 'Parameters' },
+                        { label: 'Salud', icon: 'medkit', color: COLORS.error, screen: 'Health' },
+                        { label: 'Calc.', icon: 'calculator', color: '#7209b7', screen: 'Calculator' },
+                        { label: 'Crianza', icon: 'egg', color: COLORS.warning, screen: 'Breeding' },
+                      ].map(({ label, icon, color, screen }) => (
+                        <TouchableOpacity
+                          key={screen}
+                          style={styles.quickAction}
+                          onPress={() => navigation.navigate(screen)}
+                          activeOpacity={0.7}
+                        >
+                          <View style={[styles.quickActionIcon, { backgroundColor: color + '15', width: s(46), height: s(46), borderRadius: s(14) }]}>
+                            <Ionicons name={icon as any} size={s(18)} color={color} />
+                          </View>
+                          <Text style={[styles.quickActionLabel, { color, fontSize: fs(11) }]}>{label}</Text>
+                        </TouchableOpacity>
+                      ))}
+                    </View>
                   </View>
                 )}
 
@@ -1205,9 +1251,34 @@ const styles = StyleSheet.create({
   stockStatLabel: { fontSize: 10, fontFamily: FONTS.sans, color: COLORS.textMuted, marginTop: 2 },
   bioloadTrack: { height: 6, backgroundColor: COLORS.abyss, borderRadius: 3, overflow: 'hidden', marginBottom: SPACING.xs },
   bioloadFill: { height: '100%', borderRadius: 3 },
-  bioloadLabel: { fontSize: 12, fontWeight: '700', fontFamily: FONTS.sansBd, marginBottom: SPACING.xs },
-  schoolingRow: { flexDirection: 'row', alignItems: 'center', gap: 5, marginTop: 4 },
-  schoolingRowText: { fontSize: 11, fontFamily: FONTS.sans, color: COLORS.warning, flex: 1 },
+  bioloadLabel: { fontSize: 12, fontWeight: '700', fontFamily: FONTS.sansBd, marginBottom: SPACING.sm },
+
+  // Column distribution
+  columnDistRow: {
+    marginTop: SPACING.sm, paddingTop: SPACING.sm,
+  },
+  columnDistTitle: { fontSize: 11, fontFamily: FONTS.sansSb, color: COLORS.textMuted, marginBottom: SPACING.xs, textTransform: 'uppercase' as any, letterSpacing: 0.5 },
+  columnBars: { flexDirection: 'row', justifyContent: 'space-around', alignItems: 'flex-end', height: 56 },
+  columnBarItem: { alignItems: 'center', gap: 3, flex: 1 },
+  columnBarTrack: { width: 20, height: 40, backgroundColor: COLORS.border + '50', borderRadius: 4, overflow: 'hidden', justifyContent: 'flex-end' },
+  columnBarFill: { width: '100%', borderRadius: 4, minHeight: 2 },
+  columnBarLabel: { fontSize: 9, fontFamily: FONTS.sans, color: COLORS.textMuted },
+  columnBarPct: { fontSize: 11, fontFamily: FONTS.sansBd },
+
+  // Top contributor
+  topContributorRow: { flexDirection: 'row', alignItems: 'center', gap: 5, marginTop: SPACING.sm },
+  topContributorText: { fontSize: 11, fontFamily: FONTS.sans, color: COLORS.textMuted, flex: 1 },
+
+  // Stock alerts
+  stockAlertRow: {
+    flexDirection: 'row', alignItems: 'flex-start', gap: 8,
+    marginTop: SPACING.xs, padding: SPACING.sm,
+    borderRadius: 10,
+    backgroundColor: COLORS.background,
+  },
+  stockAlertIcon: { fontSize: 13, marginTop: 1 },
+  stockAlertTitle: { fontSize: 11, fontFamily: FONTS.sansBd, marginBottom: 1 },
+  stockAlertBody: { fontSize: 10, fontFamily: FONTS.sans, color: COLORS.textSecondary, lineHeight: 15 },
 
   // Section header
   sectionRow: {
@@ -1442,14 +1513,26 @@ const styles = StyleSheet.create({
   setupRecText: { fontSize: 13, fontFamily: FONTS.sans, color: COLORS.textSecondary, flex: 1, lineHeight: 18 },
 
   // Quick actions
-  quickActions: {
-    flexDirection: 'row', justifyContent: 'space-between',
-    marginHorizontal: SPACING.screen, marginBottom: SPACING.md,
+  quickActionsCard: {
+    backgroundColor: COLORS.backgroundCard,
+    borderRadius: BORDER_RADIUS.lg,
+    marginHorizontal: SPACING.screen,
+    marginBottom: SPACING.md,
+    paddingVertical: SPACING.md,
+    paddingHorizontal: SPACING.sm,
+    borderWidth: 1,
+    borderColor: COLORS.border,
+    shadowColor: '#000', shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.05, shadowRadius: 4, elevation: 2,
   },
-  quickAction: { alignItems: 'center', gap: 5 },
+  quickActions: {
+    flexDirection: 'row', justifyContent: 'space-around',
+  },
+  quickAction: { alignItems: 'center', gap: 6 },
   quickActionIcon: {
-    width: 46, height: 46, borderRadius: 23,
+    width: 46, height: 46, borderRadius: 14,
     alignItems: 'center', justifyContent: 'center',
+    borderWidth: 1, borderColor: 'transparent',
   },
   quickActionLabel: { fontSize: 11, fontFamily: FONTS.sansSb, textAlign: 'center' },
 });

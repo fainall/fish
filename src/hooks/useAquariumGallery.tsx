@@ -17,6 +17,7 @@
  */
 import React, { createContext, useContext, useEffect, useState, useCallback } from 'react';
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import * as ImageManipulator from 'expo-image-manipulator';
 import { supabase, IS_DEMO_MODE } from '../services/supabase';
 import { useAuth } from './useAuth';
 
@@ -39,20 +40,34 @@ interface Ctx {
 const GalleryCtx = createContext<Ctx | undefined>(undefined);
 const localKey = (uid: string) => `@aquamanager_gallery_${uid}`;
 
+const MAX_DIMENSION = 1200;
+const COMPRESS_QUALITY = 0.7;
+
+async function compressImage(uri: string): Promise<string> {
+  try {
+    const result = await ImageManipulator.manipulateAsync(
+      uri,
+      [{ resize: { width: MAX_DIMENSION } }],
+      { compress: COMPRESS_QUALITY, format: ImageManipulator.SaveFormat.JPEG },
+    );
+    return result.uri;
+  } catch {
+    return uri; // fallback to original if compression fails
+  }
+}
+
 async function uploadPhoto(userId: string, aquariumId: string, localUri: string): Promise<string | null> {
   try {
-    const rawExt = (localUri.split('.').pop()?.split('?')[0] ?? 'jpg').toLowerCase();
-    const safe   = ['png','jpg','jpeg','gif','webp'].includes(rawExt) ? rawExt : 'jpg';
-    const mime   = safe === 'png' ? 'image/png' : safe === 'gif' ? 'image/gif' : safe === 'webp' ? 'image/webp' : 'image/jpeg';
-    const path   = `${userId}/${aquariumId}/${Date.now()}.${safe === 'jpeg' ? 'jpg' : safe}`;
-    const response = await fetch(localUri);
+    const compressedUri = await compressImage(localUri);
+    const path = `${userId}/${aquariumId}/${Date.now()}.jpg`;
+    const response = await fetch(compressedUri);
     const blob     = await response.blob();
     const { error } = await (supabase as any).storage.from('posts')
-      .upload(path, blob, { contentType: mime, upsert: false });
-    if (error) return null;
+      .upload(path, blob, { contentType: 'image/jpeg', upsert: false });
+    if (error) { console.warn('[Gallery] upload error:', error.message); return null; }
     const { data } = (supabase as any).storage.from('posts').getPublicUrl(path);
     return (data?.publicUrl as string) ?? null;
-  } catch { return null; }
+  } catch (e) { console.warn('[Gallery] uploadPhoto failed:', e); return null; }
 }
 
 export function AquariumGalleryProvider({ children }: { children: React.ReactNode }) {

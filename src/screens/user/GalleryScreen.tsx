@@ -5,7 +5,7 @@
 import React, { useMemo, useState } from 'react';
 import {
   View, Text, StyleSheet, TouchableOpacity, FlatList, Alert,
-  Modal, ScrollView, TextInput, ActivityIndicator,
+  Modal, ScrollView, TextInput, ActivityIndicator, InteractionManager,
 } from 'react-native';
 import { FishImage as Image } from '../../components/FishImage';
 import { LinearGradient } from 'expo-linear-gradient';
@@ -61,9 +61,19 @@ export default function GalleryScreen({ navigation }: any) {
   async function confirmUpload() {
     if (!pendingUri || !selectedAquarium) return;
     setUploading(true);
-    await add(selectedAquarium.id, pendingUri, caption.trim() || undefined);
-    setUploading(false);
-    setPendingUri(null); setCaption('');
+    // Let React render the spinner before starting heavy work
+    InteractionManager.runAfterInteractions(async () => {
+      try {
+        await add(selectedAquarium.id, pendingUri!, caption.trim() || undefined);
+      } catch (e) {
+        Alert.alert('Error', 'No se pudo subir la foto. Intenta de nuevo.');
+        console.warn('[Gallery] confirmUpload error:', e);
+      } finally {
+        setUploading(false);
+        setPendingUri(null);
+        setCaption('');
+      }
+    });
   }
 
   if (!selectedAquarium) {
