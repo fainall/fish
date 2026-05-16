@@ -1,8 +1,9 @@
 import React, { useState, useMemo, useEffect, useRef, useCallback } from 'react';
 import {
   View, Text, ScrollView, TouchableOpacity, StyleSheet,
-  Modal, TextInput, Alert, Animated, Platform, useWindowDimensions,
+  Modal, TextInput, Alert, Platform, useWindowDimensions,
 } from 'react-native';
+import RAnimated, { FadeInRight, FadeOutLeft, Layout, useSharedValue, useAnimatedStyle, withSpring } from 'react-native-reanimated';
 import { FishImage as Image } from '../../components/FishImage';
 import { LinearGradient } from 'expo-linear-gradient';
 import { Ionicons } from '@expo/vector-icons';
@@ -53,16 +54,17 @@ function FishCard({ fishData, qty, onChangeQty, onRemove, aquariumStyle }: {
 }) {
   const { width: screenW } = useWindowDimensions();
   const imgSize = Math.round(Math.min(1.4, Math.max(0.85, screenW / 375)) * 82);
-  const scale = useRef(new Animated.Value(1)).current;
-  const onPressIn  = () => Animated.spring(scale, { toValue: 0.97, ...{ tension: 300, friction: 25 }, useNativeDriver: true }).start();
-  const onPressOut = () => Animated.spring(scale, { toValue: 1,    ...{ tension: 300, friction: 25 }, useNativeDriver: true }).start();
+  const scale = useSharedValue(1);
+  const scaleStyle = useAnimatedStyle(() => ({ transform: [{ scale: scale.value }] }));
+  const onPressIn  = () => { scale.value = withSpring(0.97, { damping: 20, stiffness: 300 }); };
+  const onPressOut = () => { scale.value = withSpring(1,    { damping: 15, stiffness: 200 }); };
 
   const schoolingWarn  = fishData.is_schooling && qty < (fishData.schooling_min ?? 6);
   const fitCategory    = getFitCategory(fishData, aquariumStyle);
   const paramConflicts = aquariumStyle ? getParamConflicts(fishData, aquariumStyle) : [];
 
   return (
-    <Animated.View style={[styles.fishCard, { transform: [{ scale }] }]}>
+    <RAnimated.View style={[styles.fishCard, scaleStyle]}>
       <TouchableOpacity activeOpacity={1} onPressIn={onPressIn} onPressOut={onPressOut} style={styles.fishCardInner}>
 
         {/* Imagen flush izquierda */}
@@ -129,7 +131,7 @@ function FishCard({ fishData, qty, onChangeQty, onRemove, aquariumStyle }: {
         </View>
 
       </TouchableOpacity>
-    </Animated.View>
+    </RAnimated.View>
   );
 }
 

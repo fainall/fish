@@ -3,7 +3,7 @@ module.exports = function (api) {
   return {
     presets: ['babel-preset-expo'],
     plugins: [
-      'react-native-worklets/plugin', // MUST be last
+      'react-native-worklets/plugin', // Reanimated v4 uses worklets as its plugin
     ],
   };
 };

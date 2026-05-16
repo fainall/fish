@@ -1,8 +1,8 @@
-import React, { useState, useEffect, useRef, useMemo } from 'react';
+import React, { useState, useMemo } from 'react';
 import {
   View, Text, ScrollView, TouchableOpacity, StyleSheet, Modal, Image,
-  Animated, Easing,
 } from 'react-native';
+import RAnimated, { FadeInDown, FadeInRight, FadeInUp, Layout } from 'react-native-reanimated';
 import { LinearGradient } from 'expo-linear-gradient';
 import { Ionicons } from '@expo/vector-icons';
 import { COLORS, FONTS, SPACING, BORDER_RADIUS } from '../../constants/theme';
@@ -21,23 +21,42 @@ import {
   FishAlert, getParameterAlerts, getSchoolingAlerts,
   getDifficultyAlerts, getHealthTips, getFishOfTheDay,
 } from '../../utils/fishAlerts';
+import {
+  useScrollAnimations,
+  useParallaxStyle,
+  useStaggerStyle,
+  useScalePress,
+} from '../../utils/animations';
 import AchievementsScreen from './AchievementsScreen';
 import ProfileScreen from './ProfileScreen';
 
 
-// ── Stat pill ─────────────────────────────────────────────────────────────────
-interface StatPillProps { label: string; value: string; icon: string; color: string; }
-const StatPill = ({ label, value, icon, color }: StatPillProps) => (
-  <View style={styles.statPill}>
-    <View style={[styles.statPillIcon, { backgroundColor: color + '18' }]}>
-      <Ionicons name={icon as any} size={20} color={color} />
-    </View>
-    <View>
-      <Text style={[styles.statPillValue, { color }]}>{value}</Text>
-      <Text style={styles.statPillLabel}>{label}</Text>
-    </View>
-  </View>
-);
+// ── Animated stat pill ────────────────────────────────────────────────────────
+interface StatPillProps { label: string; value: string; icon: string; color: string; index: number; }
+const StatPill = ({ label, value, icon, color, index }: StatPillProps) => {
+  const { style, onPressIn, onPressOut } = useScalePress(0.93);
+  return (
+    <RAnimated.View
+      entering={FadeInDown.delay(300 + index * 80).duration(500).springify().damping(16)}
+      style={style}
+    >
+      <TouchableOpacity
+        activeOpacity={1}
+        onPressIn={onPressIn}
+        onPressOut={onPressOut}
+        style={styles.statPill}
+      >
+        <View style={[styles.statPillIcon, { backgroundColor: color + '18' }]}>
+          <Ionicons name={icon as any} size={20} color={color} />
+        </View>
+        <View>
+          <Text style={[styles.statPillValue, { color }]}>{value}</Text>
+          <Text style={styles.statPillLabel}>{label}</Text>
+        </View>
+      </TouchableOpacity>
+    </RAnimated.View>
+  );
+};
 
 // ── Experience labels ─────────────────────────────────────────────────────────
 const EXP_LABELS = {
@@ -94,50 +113,9 @@ export default function HomeScreen({ navigation }: any) {
 
   const fishOfTheDay = useMemo(() => getFishOfTheDay(allFish), [allFish]);
 
-  // ── Fish swim (banner) ────────────────────────────────────────────────────
-  const fishX       = useRef(new Animated.Value(0)).current;
-  const fishY       = useRef(new Animated.Value(0)).current;
-  const fishOpacity = useRef(new Animated.Value(0)).current;
-
-  // ── Section stagger ───────────────────────────────────────────────────────
-  const NUM_SECTIONS = 5;
-  const sectionAnims = useRef(
-    Array.from({ length: NUM_SECTIONS }, () => ({
-      opacity:    new Animated.Value(0),
-      translateY: new Animated.Value(20),
-    }))
-  ).current;
-
-  useEffect(() => {
-    const fadeIn = Animated.timing(fishOpacity, { toValue: 1, duration: 800, delay: 400, useNativeDriver: true });
-    const loopX = Animated.loop(Animated.sequence([
-      Animated.timing(fishX, { toValue: 16, duration: 2400, easing: Easing.inOut(Easing.sin), useNativeDriver: true }),
-      Animated.timing(fishX, { toValue: 0,  duration: 2400, easing: Easing.inOut(Easing.sin), useNativeDriver: true }),
-    ]));
-    const loopY = Animated.loop(Animated.sequence([
-      Animated.timing(fishY, { toValue: -8, duration: 1500, easing: Easing.inOut(Easing.sin), useNativeDriver: true }),
-      Animated.timing(fishY, { toValue: 8,  duration: 1500, easing: Easing.inOut(Easing.sin), useNativeDriver: true }),
-    ]));
-    const stagger = Animated.stagger(
-      100,
-      sectionAnims.map(({ opacity, translateY }) =>
-        Animated.parallel([
-          Animated.timing(opacity, { toValue: 1, duration: 450, easing: Easing.out(Easing.ease), useNativeDriver: true }),
-          Animated.spring(translateY, { toValue: 0, tension: 85, friction: 11, useNativeDriver: true }),
-        ])
-      )
-    );
-    fadeIn.start();
-    loopX.start();
-    loopY.start();
-    stagger.start();
-    return () => { fadeIn.stop(); loopX.stop(); loopY.stop(); stagger.stop(); };
-  }, []);
-
-  const section = (i: number) => ({
-    opacity:   sectionAnims[i].opacity,
-    transform: [{ translateY: sectionAnims[i].translateY }],
-  });
+  // ── Scroll-driven animations (Reanimated) ──────────────────────────────────
+  const { scrollY, scrollHandler } = useScrollAnimations();
+  const bannerParallax = useParallaxStyle(scrollY, 200, 280);
 
   const recentBadges = [...unlocked]
     .sort((a, b) => new Date(b.unlockedAt).getTime() - new Date(a.unlockedAt).getTime())
@@ -152,10 +130,18 @@ export default function HomeScreen({ navigation }: any) {
   return (
     <View style={styles.container}>
 
-      <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={{ paddingBottom: SPACING.xxl }}>
+      <RAnimated.ScrollView
+        showsVerticalScrollIndicator={false}
+        contentContainerStyle={{ paddingBottom: SPACING.xxl }}
+        onScroll={scrollHandler}
+        scrollEventThrottle={16}
+      >
 
         {/* ── Header ── */}
-        <Animated.View style={[styles.header, section(0)]}>
+        <RAnimated.View
+          entering={FadeInDown.duration(500).springify().damping(18)}
+          style={styles.header}
+        >
           <View style={{ flex: 1 }}>
             <Text style={[styles.greeting, { fontSize: fs(24) }]}>Hola, {firstName}</Text>
             <Text style={styles.date}>
@@ -171,18 +157,24 @@ export default function HomeScreen({ navigation }: any) {
                 </View>
               )}
           </TouchableOpacity>
-        </Animated.View>
+        </RAnimated.View>
 
         {/* ── Search bar (Airbnb-style) ── */}
-        <Animated.View style={[styles.searchWrap, section(0)]}>
+        <RAnimated.View
+          entering={FadeInDown.delay(60).duration(450).springify().damping(18)}
+          style={styles.searchWrap}
+        >
           <View style={styles.searchBar}>
             <Ionicons name="search-outline" size={18} color={COLORS.textMuted} />
             <Text style={styles.searchPlaceholder}>Buscar peces, acuarios, parámetros…</Text>
           </View>
-        </Animated.View>
+        </RAnimated.View>
 
-        {/* ── Hero Banner ── */}
-        <Animated.View style={[styles.bannerWrap, section(1)]}>
+        {/* ── Hero Banner (parallax on scroll) ── */}
+        <RAnimated.View
+          entering={FadeInUp.delay(120).duration(600).springify().damping(14)}
+          style={[styles.bannerWrap, bannerParallax]}
+        >
           <LinearGradient
             colors={['#004e92', '#00b4d8']}
             start={{ x: 0, y: 0.3 }}
@@ -193,10 +185,10 @@ export default function HomeScreen({ navigation }: any) {
             <View style={[styles.bannerCircle1, { width: s(200), height: s(200), borderRadius: s(100) }]} />
             <View style={[styles.bannerCircle2, { width: s(120), height: s(120), borderRadius: s(60) }]} />
 
-            {/* Swimming fish */}
-            <Animated.View style={[styles.bannerFish, { opacity: fishOpacity, transform: [{ translateX: fishX }, { translateY: fishY }] }]}>
+            {/* Swimming fish icon */}
+            <View style={styles.bannerFish}>
               <Ionicons name="fish" size={s(64)} color="rgba(255,255,255,0.18)" />
-            </Animated.View>
+            </View>
 
             <View style={styles.bannerBody}>
               <View style={styles.bannerTag}>
@@ -212,11 +204,14 @@ export default function HomeScreen({ navigation }: any) {
               </TouchableOpacity>
             </View>
           </LinearGradient>
-        </Animated.View>
+        </RAnimated.View>
 
         {/* ── Mi Acuario card ── */}
         {styleInfo && (
-          <Animated.View style={[styles.aquaCard, section(2)]}>
+          <RAnimated.View
+            entering={FadeInDown.delay(200).duration(550).springify().damping(16)}
+            style={styles.aquaCard}
+          >
             <View style={styles.aquaCardHeader}>
               <View style={[styles.aquaCardEmojiWrap, { backgroundColor: styleInfo.color + '22', width: s(48), height: s(48) }]}>
                 <Text style={[styles.aquaCardEmoji, { fontSize: fs(24) }]}>{styleInfo.icon}</Text>
@@ -248,7 +243,7 @@ export default function HomeScreen({ navigation }: any) {
                 </View>
               ))}
             </View>
-          </Animated.View>
+          </RAnimated.View>
         )}
 
         {/* ── Cycling alert ── */}
@@ -263,7 +258,7 @@ export default function HomeScreen({ navigation }: any) {
         )}
 
         {/* ── Tip del día ── */}
-        <Animated.View style={section(3)}>
+        <RAnimated.View entering={FadeInDown.delay(280).duration(500).springify().damping(16)}>
           <View style={styles.sectionRow}>
             <Text style={styles.sectionTitle}>Consejo del día</Text>
           </View>
@@ -278,11 +273,11 @@ export default function HomeScreen({ navigation }: any) {
               </View>
             </View>
           </View>
-        </Animated.View>
+        </RAnimated.View>
 
         {/* ── Pez del día ── */}
         {fishOfTheDay && (
-          <Animated.View style={section(3)}>
+          <RAnimated.View entering={FadeInRight.delay(350).duration(550).springify().damping(14)}>
             <View style={styles.sectionRow}>
               <Text style={styles.sectionTitle}>Pez del día</Text>
             </View>
@@ -306,12 +301,12 @@ export default function HomeScreen({ navigation }: any) {
                 <Text style={styles.fotdFact}>{fishOfTheDay.fact}</Text>
               </View>
             </View>
-          </Animated.View>
+          </RAnimated.View>
         )}
 
         {/* ── Alertas inteligentes ── */}
         {smartAlerts.length > 0 && (
-          <Animated.View style={section(4)}>
+          <RAnimated.View entering={FadeInDown.delay(400).duration(500).springify().damping(16)}>
             <View style={styles.sectionRow}>
               <Text style={styles.sectionTitle}>Alertas de tu acuario</Text>
               <View style={styles.alertCountBadge}>
@@ -322,53 +317,45 @@ export default function HomeScreen({ navigation }: any) {
               const colorMap = { critical: COLORS.error, warning: COLORS.warning, info: COLORS.primary, success: COLORS.success };
               const c = colorMap[alert.type];
               return (
-                <View key={i} style={[styles.smartAlert, { borderLeftColor: c }]}>
+                <RAnimated.View
+                  key={i}
+                  entering={FadeInRight.delay(450 + i * 60).duration(400).springify().damping(16)}
+                  style={[styles.smartAlert, { borderLeftColor: c }]}
+                >
                   <Text style={styles.smartAlertIcon}>{alert.icon}</Text>
                   <View style={{ flex: 1 }}>
                     <Text style={[styles.smartAlertTitle, { color: c }]}>{alert.title}</Text>
                     <Text style={styles.smartAlertBody}>{alert.body}</Text>
                   </View>
-                </View>
+                </RAnimated.View>
               );
             })}
-          </Animated.View>
+          </RAnimated.View>
         )}
 
         {/* ── Resumen ── */}
-        <Animated.View style={section(4)}>
+        <RAnimated.View entering={FadeInDown.delay(450).duration(500).springify().damping(16)}>
           <View style={styles.sectionRow}>
             <Text style={styles.sectionTitle}>Resumen</Text>
           </View>
           <View style={styles.statsRow}>
-            <StatPill
-              label="Acuarios"
-              value={String(aquariums.length)}
-              icon="cube-outline"
-              color={COLORS.primary}
-            />
-            <StatPill
-              label="Peces"
-              value={totalFish > 0 ? String(totalFish) : '—'}
-              icon="fish-outline"
-              color={COLORS.success}
-            />
+            <StatPill label="Acuarios" value={String(aquariums.length)} icon="cube-outline" color={COLORS.primary} index={0} />
+            <StatPill label="Peces" value={totalFish > 0 ? String(totalFish) : '—'} icon="fish-outline" color={COLORS.success} index={1} />
             <TouchableOpacity onPress={() => navigation.navigate('Tasks')} activeOpacity={0.7}>
               <StatPill
                 label="Tareas"
                 value={overdueCount > 0 ? `! ${overdueCount}` : String(pendingCount)}
                 icon={overdueCount > 0 ? 'warning-outline' : 'calendar-outline'}
                 color={overdueCount > 0 ? COLORS.error : COLORS.warning}
+                index={2}
               />
             </TouchableOpacity>
-            <StatPill
-              label="Logros"
-              value={`${unlocked.length}/${ACHIEVEMENTS.length}`}
-              icon="trophy-outline"
-              color="#f59e0b"
-            />
+            <StatPill label="Logros" value={`${unlocked.length}/${ACHIEVEMENTS.length}`} icon="trophy-outline" color="#f59e0b" index={3} />
           </View>
+        </RAnimated.View>
 
-          {/* ── Logros ── */}
+        {/* ── Logros ── */}
+        <RAnimated.View entering={FadeInDown.delay(550).duration(500).springify().damping(16)}>
           <View style={styles.sectionRow}>
             <Text style={styles.sectionTitle}>Logros</Text>
             <TouchableOpacity style={styles.seeAllBtn} onPress={() => setShowAchievements(true)}>
@@ -384,22 +371,26 @@ export default function HomeScreen({ navigation }: any) {
             </View>
           ) : (
             <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.badgesScroll}>
-              {recentBadges.map(a => {
+              {recentBadges.map((a, i) => {
                 const rColor = RARITY_COLORS[a.rarity];
                 return (
-                  <TouchableOpacity
+                  <RAnimated.View
                     key={a.id}
-                    style={[styles.badgeCard, { borderColor: rColor + '55', width: s(110) }]}
-                    onPress={() => setShowAchievements(true)}
+                    entering={FadeInRight.delay(600 + i * 70).duration(400).springify().damping(14)}
                   >
-                    <View style={[styles.badgeIconWrap, { backgroundColor: rColor + '18', width: s(52), height: s(52) }]}>
-                      <Ionicons name={a.icon as any} size={s(26)} color={rColor} />
-                    </View>
-                    <Text style={[styles.badgeName, { color: rColor }]}>{a.title}</Text>
-                    <View style={[styles.rarityPill, { backgroundColor: rColor + '22' }]}>
-                      <Text style={[styles.rarityText, { color: rColor }]}>{a.rarity.toUpperCase()}</Text>
-                    </View>
-                  </TouchableOpacity>
+                    <TouchableOpacity
+                      style={[styles.badgeCard, { borderColor: rColor + '55', width: s(110) }]}
+                      onPress={() => setShowAchievements(true)}
+                    >
+                      <View style={[styles.badgeIconWrap, { backgroundColor: rColor + '18', width: s(52), height: s(52) }]}>
+                        <Ionicons name={a.icon as any} size={s(26)} color={rColor} />
+                      </View>
+                      <Text style={[styles.badgeName, { color: rColor }]}>{a.title}</Text>
+                      <View style={[styles.rarityPill, { backgroundColor: rColor + '22' }]}>
+                        <Text style={[styles.rarityText, { color: rColor }]}>{a.rarity.toUpperCase()}</Text>
+                      </View>
+                    </TouchableOpacity>
+                  </RAnimated.View>
                 );
               })}
               <TouchableOpacity style={[styles.badgeMore, { width: s(90) }]} onPress={() => setShowAchievements(true)}>
@@ -408,9 +399,9 @@ export default function HomeScreen({ navigation }: any) {
               </TouchableOpacity>
             </ScrollView>
           )}
-        </Animated.View>
+        </RAnimated.View>
 
-      </ScrollView>
+      </RAnimated.ScrollView>
 
       {/* Modals */}
       <Modal visible={showAchievements} animationType="slide">

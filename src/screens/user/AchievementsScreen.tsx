@@ -2,6 +2,7 @@ import React from 'react';
 import {
   View, Text, ScrollView, StyleSheet, TouchableOpacity,
 } from 'react-native';
+import RAnimated, { FadeInDown, FadeInRight, Layout } from 'react-native-reanimated';
 import { LinearGradient } from 'expo-linear-gradient';
 import { Ionicons } from '@expo/vector-icons';
 import { COLORS, FONTS, SPACING, BORDER_RADIUS, SHADOWS } from '../../constants/theme';
@@ -10,6 +11,7 @@ import {
   ACHIEVEMENTS,
   RARITY_COLORS,
 } from '../../hooks/useAchievements';
+import { useAnimatedWidth } from '../../utils/animations';
 
 const RARITY_LABELS: Record<string, string> = {
   bronze:   'Bronce',
@@ -28,6 +30,7 @@ export default function AchievementsScreen({ onClose }: Props) {
   const unlockedCount  = unlocked.length;
   const totalCount     = ACHIEVEMENTS.length;
   const progressPct    = Math.round((unlockedCount / totalCount) * 100);
+  const animatedBarWidth = useAnimatedWidth(progressPct, 500, 1000);
 
   // Group by rarity
   const grouped = RARITY_ORDER.map(rarity => ({
@@ -50,7 +53,10 @@ export default function AchievementsScreen({ onClose }: Props) {
       <ScrollView showsVerticalScrollIndicator={false}>
 
         {/* Progress card */}
-        <View style={styles.progressCard}>
+        <RAnimated.View
+          entering={FadeInDown.duration(500).springify().damping(16)}
+          style={styles.progressCard}
+        >
           <View style={styles.progressTop}>
             <View>
               <Text style={styles.progressCount}>
@@ -65,13 +71,15 @@ export default function AchievementsScreen({ onClose }: Props) {
             </View>
           </View>
 
-          {/* Progress bar */}
+          {/* Animated progress bar */}
           <View style={styles.progressBarBg}>
-            <LinearGradient
-              colors={progressPct === 100 ? ['#ffd700', '#ffab40'] : [COLORS.primary, COLORS.accent]}
-              style={[styles.progressBarFill, { width: `${progressPct}%` as any }]}
-              start={{ x: 0, y: 0 }} end={{ x: 1, y: 0 }}
-            />
+            <RAnimated.View style={[{ height: '100%', borderRadius: 4, overflow: 'hidden' }, animatedBarWidth]}>
+              <LinearGradient
+                colors={progressPct === 100 ? ['#ffd700', '#ffab40'] : [COLORS.primary, COLORS.accent]}
+                style={[styles.progressBarFill, { width: '100%' }]}
+                start={{ x: 0, y: 0 }} end={{ x: 1, y: 0 }}
+              />
+            </RAnimated.View>
           </View>
 
           {unlockedIds.has('master') && (
@@ -79,7 +87,7 @@ export default function AchievementsScreen({ onClose }: Props) {
               <Text style={styles.masterBannerText}>🏆 ¡Maestro Acuarista! Has desbloqueado todos los logros.</Text>
             </View>
           )}
-        </View>
+        </RAnimated.View>
 
         {/* Achievement groups */}
         {grouped.map(({ rarity, items }) => {
@@ -96,13 +104,15 @@ export default function AchievementsScreen({ onClose }: Props) {
                 </Text>
               </View>
 
-              {items.map(achievement => {
+              {items.map((achievement, achIdx) => {
                 const isUnlocked = unlockedIds.has(achievement.id);
                 const unlockDate = unlocked.find(u => u.id === achievement.id)?.unlockedAt;
 
                 return (
-                  <View
+                  <RAnimated.View
                     key={achievement.id}
+                    entering={FadeInRight.delay(200 + achIdx * 50).duration(400).springify().damping(16)}
+                    layout={Layout.springify()}
                     style={[
                       styles.achievementCard,
                       SHADOWS.sm,
@@ -157,7 +167,7 @@ export default function AchievementsScreen({ onClose }: Props) {
                         </Text>
                       )}
                     </View>
-                  </View>
+                  </RAnimated.View>
                 );
               })}
             </View>

@@ -3,6 +3,7 @@ import {
   View, Text, ScrollView, TouchableOpacity, StyleSheet,
   TextInput, Alert, Image, ActivityIndicator, Platform, useWindowDimensions,
 } from 'react-native';
+import RAnimated, { FadeInDown, FadeInUp, FadeInRight } from 'react-native-reanimated';
 import { LinearGradient } from 'expo-linear-gradient';
 import { Ionicons } from '@expo/vector-icons';
 import * as ImagePicker from 'expo-image-picker';
@@ -14,6 +15,7 @@ import { useAuth } from '../../hooks/useAuth';
 import { useAquariums } from '../../hooks/useAquariums';
 import { useAchievements, ACHIEVEMENTS } from '../../hooks/useAchievements';
 import { ExperienceLevel } from '../../constants/tips';
+import { useScalePress } from '../../utils/animations';
 
 // ── Config ────────────────────────────────────────────────────────────────────
 
@@ -160,7 +162,10 @@ export default function ProfileScreen({ onClose, navigation }: Props) {
       <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={{ paddingBottom: 48 }}>
 
         {/* ── Hero block ──────────────────────────────────────────────────────── */}
-        <View style={styles.heroBlock}>
+        <RAnimated.View
+          entering={FadeInDown.duration(550).springify().damping(16)}
+          style={styles.heroBlock}
+        >
           <AvatarHero avatarUri={avatarUri} initials={initials} onPress={pickAvatar} />
 
           <Text style={[styles.heroName, { fontSize: fs(22) }]}>
@@ -173,37 +178,34 @@ export default function ProfileScreen({ onClose, navigation }: Props) {
             <Ionicons name={expOption.icon as any} size={13} color={expOption.color} />
             <Text style={[styles.expBadgeText, { color: expOption.color }]}>{expOption.label}</Text>
           </View>
-        </View>
+        </RAnimated.View>
 
         {/* ── Stats row ───────────────────────────────────────────────────────── */}
         <View style={styles.statsRow}>
-          <View style={styles.statCard}>
-            <View style={[styles.statIcon, { backgroundColor: COLORS.accent + '20', width: s(36), height: s(36), borderRadius: s(10) }]}>
-              <Ionicons name="trophy" size={s(18)} color={COLORS.accent} />
-            </View>
-            <Text style={[styles.statValue, { color: COLORS.accent, fontSize: fs(18) }]}>{totalBadges}</Text>
-            <Text style={[styles.statLabel, { fontSize: fs(10) }]}>Logros</Text>
-          </View>
-          <View style={styles.statCard}>
-            <View style={[styles.statIcon, { backgroundColor: COLORS.primary + '20', width: s(36), height: s(36), borderRadius: s(10) }]}>
-              <Ionicons name="calendar" size={s(18)} color={COLORS.primary} />
-            </View>
-            <Text style={[styles.statValue, { color: COLORS.primary, fontSize: fs(18) }]}>{daysActive}</Text>
-            <Text style={[styles.statLabel, { fontSize: fs(10) }]}>Días activo</Text>
-          </View>
-          <View style={styles.statCard}>
-            <View style={[styles.statIcon, { backgroundColor: expOption.color + '20', width: s(36), height: s(36), borderRadius: s(10) }]}>
-              <Ionicons name={expOption.icon as any} size={s(18)} color={expOption.color} />
-            </View>
-            <Text style={[styles.statValue, { color: expOption.color, fontSize: fs(18) }]}>
-              {experience === 'advanced' ? 'Avanz.' : experience === 'intermediate' ? 'Medio' : 'Inicio'}
-            </Text>
-            <Text style={[styles.statLabel, { fontSize: fs(10) }]}>Nivel</Text>
-          </View>
+          {([
+            { icon: 'trophy',   color: COLORS.accent,  value: String(totalBadges), label: 'Logros' },
+            { icon: 'calendar', color: COLORS.primary,  value: String(daysActive),  label: 'Días activo' },
+            { icon: expOption.icon, color: expOption.color, value: experience === 'advanced' ? 'Avanz.' : experience === 'intermediate' ? 'Medio' : 'Inicio', label: 'Nivel' },
+          ] as const).map((stat, i) => (
+            <RAnimated.View
+              key={stat.label}
+              entering={FadeInDown.delay(150 + i * 80).duration(450).springify().damping(14)}
+              style={styles.statCard}
+            >
+              <View style={[styles.statIcon, { backgroundColor: stat.color + '20', width: s(36), height: s(36), borderRadius: s(10) }]}>
+                <Ionicons name={stat.icon as any} size={s(18)} color={stat.color} />
+              </View>
+              <Text style={[styles.statValue, { color: stat.color, fontSize: fs(18) }]}>{stat.value}</Text>
+              <Text style={[styles.statLabel, { fontSize: fs(10) }]}>{stat.label}</Text>
+            </RAnimated.View>
+          ))}
         </View>
 
         {/* ── Name input ──────────────────────────────────────────────────────── */}
-        <View style={styles.sectionWrap}>
+        <RAnimated.View
+          entering={FadeInDown.delay(350).duration(450).springify().damping(16)}
+          style={styles.sectionWrap}
+        >
           <Text style={styles.formLabel}>Nombre mostrado</Text>
           <TextInput
             style={styles.input}
@@ -213,12 +215,15 @@ export default function ProfileScreen({ onClose, navigation }: Props) {
             placeholderTextColor={COLORS.textMuted}
             maxLength={40}
           />
-        </View>
+        </RAnimated.View>
 
         {/* ── Experience selector ─────────────────────────────────────────────── */}
-        <View style={styles.sectionWrap}>
+        <RAnimated.View
+          entering={FadeInDown.delay(420).duration(450).springify().damping(16)}
+          style={styles.sectionWrap}
+        >
           <Text style={styles.formLabel}>Nivel de experiencia</Text>
-          {EXPERIENCE_OPTIONS.map(opt => {
+          {EXPERIENCE_OPTIONS.map((opt, i) => {
             const active = experience === opt.value;
             return (
               <TouchableOpacity
@@ -241,11 +246,14 @@ export default function ProfileScreen({ onClose, navigation }: Props) {
               </TouchableOpacity>
             );
           })}
-        </View>
+        </RAnimated.View>
 
         {/* ── Recent achievements ─────────────────────────────────────────────── */}
         {recentBadges.length > 0 && (
-          <View style={styles.sectionWrap}>
+          <RAnimated.View
+            entering={FadeInDown.delay(500).duration(450).springify().damping(16)}
+            style={styles.sectionWrap}
+          >
             <View style={styles.sectionRow}>
               <Text style={styles.formLabel}>Últimos logros</Text>
               <View style={styles.badgeCountPill}>
@@ -257,10 +265,14 @@ export default function ProfileScreen({ onClose, navigation }: Props) {
               showsHorizontalScrollIndicator={false}
               contentContainerStyle={styles.achievScroll}
             >
-              {recentBadges.map(u => {
+              {recentBadges.map((u, i) => {
                 const rarity = RARITY_CONFIG[u.ach!.rarity] ?? RARITY_CONFIG.bronze;
                 return (
-                  <View key={u.id} style={[styles.achievCard, { borderColor: rarity.color + '44' }]}>
+                  <RAnimated.View
+                    key={u.id}
+                    entering={FadeInRight.delay(550 + i * 60).duration(380).springify().damping(14)}
+                    style={[styles.achievCard, { borderColor: rarity.color + '44' }]}
+                  >
                     <View style={[styles.achievIconWrap, { backgroundColor: rarity.color + '18' }]}>
                       <Ionicons name={u.ach!.icon as any} size={26} color={rarity.color} />
                     </View>
@@ -268,16 +280,19 @@ export default function ProfileScreen({ onClose, navigation }: Props) {
                     <View style={[styles.rarityPill, { backgroundColor: rarity.color + '28' }]}>
                       <Text style={[styles.rarityText, { color: rarity.color }]}>{rarity.label}</Text>
                     </View>
-                  </View>
+                  </RAnimated.View>
                 );
               })}
             </ScrollView>
-          </View>
+          </RAnimated.View>
         )}
 
         {/* ── More sections ────────────────────────────────────────────────────── */}
         {navigation && (
-          <View style={styles.sectionWrap}>
+          <RAnimated.View
+            entering={FadeInDown.delay(570).duration(450).springify().damping(16)}
+            style={styles.sectionWrap}
+          >
             <Text style={styles.formLabel}>Más secciones</Text>
             <View style={styles.actionsCard}>
               {[
@@ -297,7 +312,7 @@ export default function ProfileScreen({ onClose, navigation }: Props) {
                 </React.Fragment>
               ))}
             </View>
-          </View>
+          </RAnimated.View>
         )}
 
         {/* ── Legal ─────────────────────────────────────────────────────────────── */}
@@ -325,7 +340,10 @@ export default function ProfileScreen({ onClose, navigation }: Props) {
         )}
 
         {/* ── Account actions ─────────────────────────────────────────────────── */}
-        <View style={styles.sectionWrap}>
+        <RAnimated.View
+          entering={FadeInDown.delay(650).duration(450).springify().damping(16)}
+          style={styles.sectionWrap}
+        >
           <Text style={styles.formLabel}>Cuenta</Text>
           <View style={styles.actionsCard}>
             <TouchableOpacity style={styles.actionRow} onPress={confirmReset}>
@@ -371,7 +389,7 @@ export default function ProfileScreen({ onClose, navigation }: Props) {
               <Ionicons name="chevron-forward" size={16} color={COLORS.textMuted} />
             </TouchableOpacity>
           </View>
-        </View>
+        </RAnimated.View>
 
         {/* Build / Update version info */}
         <Text style={{
