@@ -103,6 +103,8 @@ function FishDetailModal({
 }: {
   fish: Fish | null; visible: boolean; onClose: () => void; styleId?: string;
 }) {
+  const [showFullImage, setShowFullImage] = useState(false);
+
   if (!fish) return null;
   const score = styleId ? styleFitScore(styleId as any, fish) : null;
   const diff  = fish.difficulty ? DIFFICULTY_LABELS[fish.difficulty] : null;
@@ -117,12 +119,32 @@ function FishDetailModal({
           </TouchableOpacity>
           <ScrollView showsVerticalScrollIndicator={false}>
             {fish.image_url ? (
-              <Image source={{ uri: fish.image_url }} style={styles.modalImage} resizeMode="cover" />
+              <TouchableOpacity activeOpacity={0.85} onPress={() => setShowFullImage(true)}>
+                <Image source={{ uri: fish.image_url }} style={styles.modalImage} resizeMode="cover" />
+                <View style={styles.zoomHint}>
+                  <Ionicons name="expand-outline" size={16} color="#fff" />
+                </View>
+              </TouchableOpacity>
             ) : (
               <View style={styles.modalImagePlaceholder}>
                 <Ionicons name="fish" size={60} color={COLORS.primary} />
               </View>
             )}
+
+            {/* Fullscreen image viewer */}
+            <Modal visible={showFullImage} transparent animationType="fade" onRequestClose={() => setShowFullImage(false)}>
+              <View style={styles.fullImageOverlay}>
+                <TouchableOpacity style={styles.fullImageClose} onPress={() => setShowFullImage(false)}>
+                  <Ionicons name="close" size={26} color="#fff" />
+                </TouchableOpacity>
+                <Image
+                  source={{ uri: fish.image_url! }}
+                  style={styles.fullImageContent}
+                  resizeMode="contain"
+                />
+                <Text style={styles.fullImageCaption}>{fish.common_name}</Text>
+              </View>
+            </Modal>
             <View style={styles.modalBody}>
               <Text style={styles.modalTitle}>{fish.common_name}</Text>
               <Text style={styles.modalScientific}>{fish.scientific_name}</Text>
@@ -1462,6 +1484,25 @@ const styles = StyleSheet.create({
     backgroundColor: COLORS.backgroundLight,
     alignItems: 'center', justifyContent: 'center',
     borderTopLeftRadius: BORDER_RADIUS.xl, borderTopRightRadius: BORDER_RADIUS.xl,
+  },
+  zoomHint: {
+    position: 'absolute', bottom: 10, right: 10,
+    backgroundColor: 'rgba(0,0,0,0.5)', borderRadius: 14,
+    width: 28, height: 28, alignItems: 'center', justifyContent: 'center',
+  },
+  fullImageOverlay: {
+    flex: 1, backgroundColor: '#000', alignItems: 'center', justifyContent: 'center',
+  },
+  fullImageClose: {
+    position: 'absolute', top: 50, right: 20, zIndex: 10,
+    width: 40, height: 40, borderRadius: 20,
+    backgroundColor: 'rgba(255,255,255,0.15)',
+    alignItems: 'center', justifyContent: 'center',
+  },
+  fullImageContent: { width: '100%', height: '75%' },
+  fullImageCaption: {
+    color: '#fff', fontSize: 14, fontFamily: FONTS.sans,
+    marginTop: SPACING.md, opacity: 0.7,
   },
   modalBody: { padding: SPACING.lg },
   modalBadgesRow: { flexDirection: 'row', gap: 8, flexWrap: 'wrap', marginBottom: SPACING.sm },
