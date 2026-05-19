@@ -63,7 +63,7 @@ export function AquariumsProvider({ children }: { children: React.ReactNode }) {
               { onConflict: 'aquarium_id,fish_id' },
             );
         }
-      } catch { /* silencioso */ }
+      } catch (e) { console.warn('[Aquariums] Supabase sync failed:', e); }
     }
   };
 
@@ -92,7 +92,7 @@ export function AquariumsProvider({ children }: { children: React.ReactNode }) {
             // Supabase returned empty — fall through to AsyncStorage
             // (new aquarium may have been saved locally before Supabase was reachable)
           }
-        } catch { /* network error — fallback */ }
+        } catch (e) { console.warn('[Aquariums] Supabase load failed:', e); }
       }
       // AsyncStorage fallback (demo mode OR Supabase empty/error)
       try {
@@ -107,7 +107,7 @@ export function AquariumsProvider({ children }: { children: React.ReactNode }) {
             syncLocalToSupabase(list, user.id).catch(() => {});
           }
         }
-      } catch { /* ignore */ }
+      } catch (e) { console.warn('[Aquariums] Local load failed:', e); }
       setLoading(false);
     };
 
@@ -118,7 +118,7 @@ export function AquariumsProvider({ children }: { children: React.ReactNode }) {
   const persistLocal = async (list: AquariumEntry[]) => {
     setAquariums(list);
     if (user) {
-      try { await AsyncStorage.setItem(localKey(user.id), JSON.stringify(list)); } catch { /* ignore */ }
+      try { await AsyncStorage.setItem(localKey(user.id), JSON.stringify(list)); } catch (e) { console.warn('[Aquariums] Storage op failed:', e); }
     }
   };
 
@@ -139,7 +139,7 @@ export function AquariumsProvider({ children }: { children: React.ReactNode }) {
           setSelectedId(entry.id);
           return entry;
         }
-      } catch { /* fallback */ }
+      } catch (e) { console.warn('[Aquariums] Supabase op failed:', e); }
     }
     // Local fallback
     const entry: AquariumEntry = {
@@ -157,7 +157,7 @@ export function AquariumsProvider({ children }: { children: React.ReactNode }) {
       try {
         const { fish: _fish, ...dbData } = data as any;
         await supabase.from('aquariums').update(dbData).eq('id', id);
-      } catch { /* fallback */ }
+      } catch (e) { console.warn('[Aquariums] Supabase op failed:', e); }
     }
     await persistLocal(aquariums.map(a => a.id === id ? { ...a, ...data } : a));
   }, [aquariums, user]);
@@ -165,7 +165,7 @@ export function AquariumsProvider({ children }: { children: React.ReactNode }) {
   // ── Delete ────────────────────────────────────────────────────────────────
   const deleteAquarium = useCallback(async (id: string) => {
     if (!IS_DEMO_MODE) {
-      try { await supabase.from('aquariums').delete().eq('id', id); } catch { /* fallback */ }
+      try { await supabase.from('aquariums').delete().eq('id', id); } catch (e) { console.warn('[Aquariums] Supabase op failed:', e); }
     }
     const next = aquariums.filter(a => a.id !== id);
     await persistLocal(next);
@@ -177,12 +177,12 @@ export function AquariumsProvider({ children }: { children: React.ReactNode }) {
     if (!IS_DEMO_MODE && user) {
       try {
         await supabase.from('aquariums').delete().eq('user_id', user.id);
-      } catch { /* fallback */ }
+      } catch (e) { console.warn('[Aquariums] Supabase op failed:', e); }
     }
     setAquariums([]);
     setSelectedId(null);
     if (user) {
-      try { await AsyncStorage.removeItem(localKey(user.id)); } catch { /* ignore */ }
+      try { await AsyncStorage.removeItem(localKey(user.id)); } catch (e) { console.warn('[Aquariums] Storage op failed:', e); }
     }
   }, [user]);
 
@@ -194,7 +194,7 @@ export function AquariumsProvider({ children }: { children: React.ReactNode }) {
           { aquarium_id: aquariumId, fish_id: fishId, quantity: qty },
           { onConflict: 'aquarium_id,fish_id' },
         );
-      } catch { /* fallback */ }
+      } catch (e) { console.warn('[Aquariums] Supabase op failed:', e); }
     }
     await persistLocal(aquariums.map(a => {
       if (a.id !== aquariumId) return a;
@@ -214,7 +214,7 @@ export function AquariumsProvider({ children }: { children: React.ReactNode }) {
           .delete()
           .eq('aquarium_id', aquariumId)
           .eq('fish_id', fishId);
-      } catch { /* fallback */ }
+      } catch (e) { console.warn('[Aquariums] Supabase op failed:', e); }
     }
     await persistLocal(aquariums.map(a =>
       a.id !== aquariumId ? a : { ...a, fish: a.fish.filter(f => f.fishId !== fishId) }

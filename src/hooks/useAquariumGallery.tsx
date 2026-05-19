@@ -91,12 +91,12 @@ export function AquariumGalleryProvider({ children }: { children: React.ReactNod
           if (!error && data) {
             setPhotos(data); setLoading(false); return;
           }
-        } catch {}
+        } catch (e) { console.warn('[Gallery] Supabase load failed:', e); }
       }
       try {
         const raw = await AsyncStorage.getItem(localKey(user.id));
         setPhotos(raw ? JSON.parse(raw) : []);
-      } catch { setPhotos([]); }
+      } catch (e) { console.warn('[Gallery] Local load failed:', e); setPhotos([]); }
       setLoading(false);
     })();
   }, [user?.id]);
@@ -104,7 +104,7 @@ export function AquariumGalleryProvider({ children }: { children: React.ReactNod
   const persistLocal = useCallback(async (next: GalleryPhoto[]) => {
     setPhotos(next);
     if (user) {
-      try { await AsyncStorage.setItem(localKey(user.id), JSON.stringify(next)); } catch {}
+      try { await AsyncStorage.setItem(localKey(user.id), JSON.stringify(next)); } catch (e) { console.warn('[Gallery] Local persist failed:', e); }
     }
   }, [user]);
 
@@ -128,7 +128,7 @@ export function AquariumGalleryProvider({ children }: { children: React.ReactNod
           setPhotos(prev => [data, ...prev]);
           return data as GalleryPhoto;
         }
-      } catch {}
+      } catch (e) { console.warn('[Gallery] Supabase insert failed:', e); }
     }
     const newPhoto: GalleryPhoto = {
       id: `g_${Date.now()}`, aquarium_id: aquariumId, image_url: finalUrl,
@@ -141,7 +141,7 @@ export function AquariumGalleryProvider({ children }: { children: React.ReactNod
   const remove = useCallback(async (photoId: string) => {
     if (!user) return;
     if (!IS_DEMO_MODE) {
-      try { await supabase.from('aquarium_photos').delete().eq('id', photoId); } catch {}
+      try { await supabase.from('aquarium_photos').delete().eq('id', photoId); } catch (e) { console.warn('[Gallery] Supabase delete failed:', e); }
     }
     await persistLocal(photos.filter(p => p.id !== photoId));
   }, [user, photos, persistLocal]);

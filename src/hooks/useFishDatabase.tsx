@@ -113,7 +113,7 @@ export function FishDatabaseProvider({ children }: { children: React.ReactNode }
             setLoading(false);
             return;
           }
-        } catch { /* fallback */ }
+        } catch (e) { console.warn('[FishDB] Supabase op failed:', e); }
       }
 
       // AsyncStorage overrides on top of local base
@@ -130,7 +130,8 @@ export function FishDatabaseProvider({ children }: { children: React.ReactNode }
         } else {
           setFish(base);
         }
-      } catch {
+      } catch (e) {
+        console.warn('[FishDB] Local load failed:', e);
         setFish(base);
       }
       setLoading(false);
@@ -166,7 +167,7 @@ export function FishDatabaseProvider({ children }: { children: React.ReactNode }
       try {
         await supabase.from('fish').update(data).eq('id', id);
         return; // Supabase is source of truth; skip AsyncStorage
-      } catch { /* fallback */ }
+      } catch (e) { console.warn('[FishDB] Supabase op failed:', e); }
     }
     await saveOverrides(updated);
   };
@@ -184,7 +185,7 @@ export function FishDatabaseProvider({ children }: { children: React.ReactNode }
           setFish(prev => [...prev, rowToFish(row)]);
           return;
         }
-      } catch { /* fallback */ }
+      } catch (e) { console.warn('[FishDB] Supabase op failed:', e); }
     }
 
     const newFish: EditableFish = { ...data, id: `custom-${Date.now()}` };
@@ -200,7 +201,7 @@ export function FishDatabaseProvider({ children }: { children: React.ReactNode }
         await supabase.from('fish').delete().eq('id', id);
         setFish(prev => prev.filter(f => f.id !== id));
         return;
-      } catch { /* fallback */ }
+      } catch (e) { console.warn('[FishDB] Supabase op failed:', e); }
     }
 
     const updated = fish.filter(f => f.id !== id);
@@ -218,7 +219,7 @@ export function FishDatabaseProvider({ children }: { children: React.ReactNode }
           setFish(data.map(rowToFish));
           return;
         }
-      } catch { /* fallback */ }
+      } catch (e) { console.warn('[FishDB] Supabase op failed:', e); }
     }
     await AsyncStorage.removeItem(STORAGE_KEY);
     setFish(buildBase());

@@ -13,7 +13,12 @@
     },
     "ios": {
       "supportsTablet": true,
-      "bundleIdentifier": "com.aquaria.app"
+      "bundleIdentifier": "com.aquaria.app",
+      "infoPlist": {
+        "NSCameraUsageDescription": "Aquaria necesita acceso a la camara para tomar fotos de tu acuario y tus peces.",
+        "NSPhotoLibraryUsageDescription": "Aquaria necesita acceso a tu galeria para seleccionar fotos de tu acuario.",
+        "NSPhotoLibraryAddUsageDescription": "Aquaria necesita permiso para guardar fotos en tu galeria."
+      }
     },
     "android": {
       "adaptiveIcon": {
@@ -21,7 +26,15 @@
         "backgroundColor": "#000516"
       },
       "package": "com.aquaria.app",
-      "edgeToEdgeEnabled": false
+      "edgeToEdgeEnabled": false,
+      "permissions": [
+        "CAMERA",
+        "READ_EXTERNAL_STORAGE",
+        "WRITE_EXTERNAL_STORAGE",
+        "RECEIVE_BOOT_COMPLETED",
+        "SCHEDULE_EXACT_ALARM",
+        "POST_NOTIFICATIONS"
+      ]
     },
     "web": {
       "favicon": "./assets/favicon.png"
@@ -29,7 +42,16 @@
     "plugins": [
       "expo-font",
       "expo-splash-screen",
-      "expo-web-browser"
+      "expo-web-browser",
+      "expo-image-picker",
+      "expo-image-manipulator",
+      [
+        "expo-notifications",
+        {
+          "icon": "./assets/icon.png",
+          "color": "#0090BF"
+        }
+      ]
     ],
     "extra": {
       "eas": {

@@ -32,7 +32,7 @@ async function loadLocalPosts(): Promise<Post[]> {
   try {
     const raw = await AsyncStorage.getItem(POSTS_KEY);
     return raw ? JSON.parse(raw) : [];
-  } catch { return []; }
+  } catch (e) { console.warn('[Community] loadLocalPosts failed:', e); return []; }
 }
 
 async function saveLocalPosts(posts: Post[]) {
@@ -40,14 +40,14 @@ async function saveLocalPosts(posts: Post[]) {
     // Only persist user-created posts (not demo ones)
     const userPosts = posts.filter(p => !DEMO_POSTS.some(d => d.id === p.id));
     await AsyncStorage.setItem(POSTS_KEY, JSON.stringify(userPosts));
-  } catch { /* ignore */ }
+  } catch (e) { console.warn('[Community] saveLocalPosts failed:', e); }
 }
 
 async function loadLocalComments(): Promise<Record<string, PostComment[]>> {
   try {
     const raw = await AsyncStorage.getItem(COMMENTS_KEY);
     return raw ? JSON.parse(raw) : {};
-  } catch { return {}; }
+  } catch (e) { console.warn('[Community] loadLocalComments failed:', e); return {}; }
 }
 
 async function saveLocalComments(comments: Record<string, PostComment[]>) {
@@ -61,7 +61,7 @@ async function saveLocalComments(comments: Record<string, PostComment[]>) {
       if (userAdded.length > 0) filtered[postId] = userAdded;
     }
     await AsyncStorage.setItem(COMMENTS_KEY, JSON.stringify(filtered));
-  } catch { /* ignore */ }
+  } catch (e) { console.warn('[Community] saveLocalComments failed:', e); }
 }
 
 // ── Hook ──────────────────────────────────────────────────────────────────────
@@ -135,7 +135,8 @@ export function useCommunity() {
         setPosts([]);
         setHasMore(false);
       }
-    } catch {
+    } catch (e) {
+      console.warn('[Community] Supabase reload failed:', e);
       setPosts([]);
       setHasMore(false);
     }
@@ -162,7 +163,7 @@ export function useCommunity() {
         setPosts(prev => [...prev, ...newPosts]);
         setHasMore(data.length === PAGE_SIZE);
       }
-    } catch { /* ignore */ }
+    } catch (e) { console.warn('[Community] loadMore failed:', e); }
     setLoadingMore(false);
   }, [hasMore, loadingMore, loading, posts]);
 
@@ -186,7 +187,8 @@ export function useCommunity() {
 
       const { data } = (supabase as any).storage.from('posts').getPublicUrl(path);
       return (data?.publicUrl as string) ?? null;
-    } catch {
+    } catch (e) {
+      console.warn('[Community] uploadPostImage failed:', e);
       return null;
     }
   }, [uid]);
@@ -213,7 +215,8 @@ export function useCommunity() {
         } else {
           await supabase.from('post_likes').insert({ post_id: postId, user_id: uid });
         }
-      } catch {
+      } catch (e) {
+        console.warn('[Community] toggleLike rollback:', e);
         setPosts(prev => prev.map(p => {
           if (p.id !== postId) return p;
           const rolled = isLiked ? [uid, ...p.likes] : p.likes.filter(id => id !== uid);
@@ -238,7 +241,7 @@ export function useCommunity() {
           setComments(prev => ({ ...prev, [postId]: data as PostComment[] }));
           return;
         }
-      } catch { /* fallback */ }
+      } catch (e) { console.warn('[Community] loadComments failed:', e); }
     }
     setComments(prev => ({ ...prev, [postId]: IS_DEMO_MODE ? (DEMO_COMMENTS[postId] ?? []) : [] }));
   }, [comments]);
@@ -273,7 +276,7 @@ export function useCommunity() {
             [postId]: (prev[postId] ?? []).map(c => c.id === optimistic.id ? (data as PostComment) : c),
           }));
         }
-      } catch { /* keep optimistic */ }
+      } catch (e) { console.warn('[Community] addComment failed:', e); }
     }
   }, [user, uid]);
 
@@ -329,7 +332,7 @@ export function useCommunity() {
             return { ...rest, [data.id]: existing };
           });
         }
-      } catch { /* keep optimistic */ }
+      } catch (e) { console.warn('[Community] createPost failed:', e); }
     }
     setCreating(false);
   }, [user, uid, creating, uploadPostImage]);

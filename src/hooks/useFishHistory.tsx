@@ -73,12 +73,12 @@ export function FishHistoryProvider({ children }: { children: React.ReactNode })
           if (!error && data) {
             setHistory(data); setLoading(false); return;
           }
-        } catch {}
+        } catch (e) { console.warn('[FishHistory] Supabase load failed:', e); }
       }
       try {
         const raw = await AsyncStorage.getItem(localKey(user.id));
         setHistory(raw ? JSON.parse(raw) : []);
-      } catch { setHistory([]); }
+      } catch (e) { console.warn('[FishHistory] Local load failed:', e); setHistory([]); }
       setLoading(false);
     })();
   }, [user?.id]);
@@ -86,7 +86,7 @@ export function FishHistoryProvider({ children }: { children: React.ReactNode })
   const persistLocal = useCallback(async (next: FishHistoryEntry[]) => {
     setHistory(next);
     if (user) {
-      try { await AsyncStorage.setItem(localKey(user.id), JSON.stringify(next)); } catch {}
+      try { await AsyncStorage.setItem(localKey(user.id), JSON.stringify(next)); } catch (e) { console.warn('[FishHistory] Local persist failed:', e); }
     }
   }, [user]);
 
@@ -106,7 +106,7 @@ export function FishHistoryProvider({ children }: { children: React.ReactNode })
             action: entry.action, reason: entry.reason, qty: entry.qty,
           }).select().single();
         if (!error && data) { setHistory(prev => [data, ...prev]); return; }
-      } catch {}
+      } catch (e) { console.warn('[FishHistory] Supabase insert failed:', e); }
     }
     await persistLocal([newEntry, ...history]);
   }, [user, history, persistLocal]);
@@ -114,7 +114,7 @@ export function FishHistoryProvider({ children }: { children: React.ReactNode })
   const remove = useCallback(async (entryId: string) => {
     if (!user) return;
     if (!IS_DEMO_MODE) {
-      try { await supabase.from('fish_history').delete().eq('id', entryId); } catch {}
+      try { await supabase.from('fish_history').delete().eq('id', entryId); } catch (e) { console.warn('[FishHistory] Supabase delete failed:', e); }
     }
     await persistLocal(history.filter(h => h.id !== entryId));
   }, [user, history, persistLocal]);

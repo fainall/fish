@@ -78,7 +78,7 @@ export function useConversation() {
           )
           .subscribe();
 
-      } catch { /* ignore */ }
+      } catch (e) { console.warn('[Conversation] Bootstrap failed:', e); }
     };
 
     bootstrap();
@@ -106,7 +106,7 @@ export function useConversation() {
           sender_role:     'user',
           content,
         });
-      } catch { /* ignore */ }
+      } catch (e) { console.warn('[Conversation] sendMessage failed:', e); }
     }
 
     return content; // return input so caller can generate AI response

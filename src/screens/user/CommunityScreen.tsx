@@ -594,18 +594,18 @@ export default function CommunityScreen() {
     const message = `${post.user_name} en Aquaria:\n\n${post.content}`;
     if (Platform.OS === 'web') {
       if (typeof navigator !== 'undefined' && (navigator as any).share) {
-        try { await (navigator as any).share({ text: message, title: 'Aquaria' }); } catch { /* cancelled */ }
+        try { await (navigator as any).share({ text: message, title: 'Aquaria' }); } catch (e) { console.warn('[Community] Share cancelled:', e); }
       } else if (typeof navigator !== 'undefined' && navigator.clipboard) {
         try {
           await navigator.clipboard.writeText(message);
           Alert.alert('Copiado', 'Texto copiado al portapapeles');
-        } catch { /* ignore */ }
+        } catch (e) { console.warn('[Community] Clipboard copy failed:', e); }
       }
       return;
     }
     try {
       await Share.share({ message });
-    } catch { /* cancelled */ }
+    } catch (e) { console.warn('[Community] Share cancelled:', e); }
   }, []);
 
   // ── Pagination footer ──────────────────────────────────────

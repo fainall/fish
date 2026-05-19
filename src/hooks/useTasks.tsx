@@ -18,7 +18,7 @@ try {
       shouldShowList: true,
     }),
   });
-} catch { /* expo-notifications not available — ignore */ }
+} catch (e) { console.warn('[Tasks] Notification handler setup failed:', e); }
 
 interface TasksContextType {
   tasks: AquariumTask[];
@@ -52,11 +52,11 @@ async function scheduleNotif(task: AquariumTask): Promise<string | undefined> {
       },
       trigger: { date: due } as any,
     });
-  } catch { return undefined; }
+  } catch (e) { console.warn('[Tasks] scheduleNotif failed:', e); return undefined; }
 }
 
 async function cancelNotif(id?: string) {
-  if (id) try { await Notifications.cancelScheduledNotificationAsync(id); } catch { /* ignore */ }
+  if (id) try { await Notifications.cancelScheduledNotificationAsync(id); } catch (e) { console.warn('[Tasks] cancelNotif failed:', e); }
 }
 
 function nextDue(current: string, rec: RecurrenceType): string | null {
@@ -97,12 +97,12 @@ export function TasksProvider({ children }: { children: React.ReactNode }) {
             .eq('user_id', user.id)
             .order('due_date', { ascending: true });
           if (!error && data) { setTasks(data.map(rowToTask)); return; }
-        } catch { /* fallback */ }
+        } catch (e) { console.warn('[Tasks] Supabase op failed:', e); }
       }
       try {
         const raw = await AsyncStorage.getItem(localKey(user.id));
         if (raw) setTasks(JSON.parse(raw));
-      } catch { /* ignore */ }
+      } catch (e) { console.warn('[Tasks] Op failed:', e); }
     };
 
     load();
@@ -111,7 +111,7 @@ export function TasksProvider({ children }: { children: React.ReactNode }) {
   const persistLocal = async (list: AquariumTask[]) => {
     setTasks(list);
     if (user) {
-      try { await AsyncStorage.setItem(localKey(user.id), JSON.stringify(list)); } catch { /* ignore */ }
+      try { await AsyncStorage.setItem(localKey(user.id), JSON.stringify(list)); } catch (e) { console.warn('[Tasks] Op failed:', e); }
     }
   };
 
@@ -135,7 +135,7 @@ export function TasksProvider({ children }: { children: React.ReactNode }) {
           setTasks(prev => [...prev, inserted]);
           return;
         }
-      } catch { /* fallback */ }
+      } catch (e) { console.warn('[Tasks] Supabase op failed:', e); }
     }
     await persistLocal([...tasks, partial]);
   }, [tasks, user]);
@@ -169,7 +169,7 @@ export function TasksProvider({ children }: { children: React.ReactNode }) {
               .eq('id', id);
             await supabase.from('aquarium_tasks')
               .insert({ ...nextTask, user_id: user.id });
-          } catch { /* ignore */ }
+          } catch (e) { console.warn('[Tasks] Op failed:', e); }
         }
       }
       await persistLocal(nextList);
@@ -187,7 +187,7 @@ export function TasksProvider({ children }: { children: React.ReactNode }) {
           await supabase.from('aquarium_tasks')
             .update({ completed: t.completed, completed_at: t.completed_at })
             .eq('id', id);
-        } catch { /* ignore */ }
+        } catch (e) { console.warn('[Tasks] Op failed:', e); }
       }
       await persistLocal(updated);
     }
@@ -198,7 +198,7 @@ export function TasksProvider({ children }: { children: React.ReactNode }) {
     const task = tasks.find(t => t.id === id);
     await cancelNotif(task?.notification_id);
     if (!IS_DEMO_MODE) {
-      try { await supabase.from('aquarium_tasks').delete().eq('id', id); } catch { /* ignore */ }
+      try { await supabase.from('aquarium_tasks').delete().eq('id', id); } catch (e) { console.warn('[Tasks] Op failed:', e); }
     }
     await persistLocal(tasks.filter(t => t.id !== id));
   }, [tasks, user]);
@@ -213,7 +213,7 @@ export function TasksProvider({ children }: { children: React.ReactNode }) {
     if (notifId) updated.notification_id = notifId;
 
     if (!IS_DEMO_MODE) {
-      try { await supabase.from('aquarium_tasks').update(data).eq('id', id); } catch { /* ignore */ }
+      try { await supabase.from('aquarium_tasks').update(data).eq('id', id); } catch (e) { console.warn('[Tasks] Op failed:', e); }
     }
     await persistLocal(tasks.map(t => t.id === id ? updated : t));
   }, [tasks, user]);

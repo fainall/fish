@@ -86,12 +86,12 @@ export function BreedingProvider({ children }: { children: React.ReactNode }) {
             const list = data.map(row => rowToGoal(row, fishMap[row.id] ?? safeFish(row.fish_id)));
             setGoals(list); setLoading(false); return;
           }
-        } catch { /* fallback */ }
+        } catch (e) { console.warn('[Breeding] Supabase op failed:', e); }
       }
       try {
         const raw = await AsyncStorage.getItem(localKey(user.id));
         setGoals(raw ? JSON.parse(raw) : []);
-      } catch { setGoals([]); }
+      } catch (e) { console.warn('[Breeding] Local load failed:', e); setGoals([]); }
       setLoading(false);
     };
 
@@ -101,7 +101,7 @@ export function BreedingProvider({ children }: { children: React.ReactNode }) {
   const persistLocal = useCallback(async (list: BreedingGoal[]) => {
     setGoals(list);
     if (user) {
-      try { await AsyncStorage.setItem(localKey(user.id), JSON.stringify(list)); } catch { /* ignore */ }
+      try { await AsyncStorage.setItem(localKey(user.id), JSON.stringify(list)); } catch (e) { console.warn('[Breeding] Op failed:', e); }
     }
   }, [user]);
 
@@ -123,7 +123,7 @@ export function BreedingProvider({ children }: { children: React.ReactNode }) {
             );
           }
         }
-      } catch { /* ignore, persist locally anyway */ }
+      } catch (e) { console.warn('[Breeding] Supabase addGoal insert failed:', e); }
     }
     await persistLocal([goal, ...goals]);
   }, [goals, persistLocal, user]);
@@ -152,7 +152,7 @@ export function BreedingProvider({ children }: { children: React.ReactNode }) {
             );
           }
         }
-      } catch { /* ignore */ }
+      } catch (e) { console.warn('[Breeding] Op failed:', e); }
     }
     await persistLocal(goals.map(g => g.id === id ? { ...g, ...updates } : g));
   }, [goals, persistLocal, user]);
@@ -160,7 +160,7 @@ export function BreedingProvider({ children }: { children: React.ReactNode }) {
   // ── Delete ────────────────────────────────────────────────────────────────
   const deleteGoal = useCallback(async (id: string) => {
     if (!IS_DEMO_MODE) {
-      try { await supabase.from('breeding_goals').delete().eq('id', id); } catch { /* ignore */ }
+      try { await supabase.from('breeding_goals').delete().eq('id', id); } catch (e) { console.warn('[Breeding] Op failed:', e); }
     }
     await persistLocal(goals.filter(g => g.id !== id));
   }, [goals, persistLocal, user]);

@@ -44,7 +44,7 @@ export const ADMIN_DEMO_CONVERSATIONS: AdminConversation[] = [
 function toTime(iso: string): string {
   try {
     return new Date(iso).toLocaleTimeString('es-ES', { hour: '2-digit', minute: '2-digit' });
-  } catch { return ''; }
+  } catch (e) { console.warn('[AdminConv] toTime parse failed:', e); return ''; }
 }
 
 function toRelative(iso: string): string {
@@ -88,7 +88,7 @@ export function useAdminConversations() {
         messages:    [], // lazy loaded
       }));
       setConversations(list);
-    } catch { /* ignore */ }
+    } catch (e) { console.warn('[AdminConv] Reload failed:', e); }
     setLoading(false);
   }, []);
 
@@ -153,7 +153,7 @@ export function useAdminConversations() {
             }))}
           : c
       ));
-    } catch { /* ignore */ }
+    } catch (e) { console.warn('[AdminConv] loadMessages failed:', e); }
   }, [conversations]);
 
   // ── sendAdminReply ─────────────────────────────────────────────────────────
@@ -183,7 +183,7 @@ export function useAdminConversations() {
           sender_role:     'admin',
           content:         content.trim(),
         });
-      } catch { /* keep optimistic */ }
+      } catch (e) { console.warn('[AdminConv] sendReply failed:', e); }
     }
   }, [conversations, user?.id]);
 

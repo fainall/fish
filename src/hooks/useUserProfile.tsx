@@ -110,7 +110,7 @@ export function UserProfileProvider({ children }: { children: React.ReactNode })
             if (remote.onboarding_completed) {
               setProfile(remote);
               // Sincronizar a AsyncStorage como caché local
-              try { await AsyncStorage.setItem(localKey(user.id), JSON.stringify(remote)); } catch {}
+              try { await AsyncStorage.setItem(localKey(user.id), JSON.stringify(remote)); } catch (e) { console.warn('[UserProfile] Local cache failed:', e); }
               setLoading(false);
               return;
             }
@@ -140,9 +140,9 @@ export function UserProfileProvider({ children }: { children: React.ReactNode })
               await supabase.from('user_profiles')
                 .insert({ id: user.id })
                 .select().single();
-            } catch { /* la tabla puede no existir aún */ }
+            } catch (e) { console.warn('[UserProfile] Supabase insert row failed:', e); }
           }
-        } catch { /* red no disponible → fallback local */ }
+        } catch (e) { console.warn('[UserProfile] Supabase load failed:', e); }
       }
 
       // ── 2. Fallback: AsyncStorage ──────────────────────────────────────
@@ -159,7 +159,7 @@ export function UserProfileProvider({ children }: { children: React.ReactNode })
         } else {
           setProfile(DEFAULT_PROFILE);
         }
-      } catch { setProfile(DEFAULT_PROFILE); }
+      } catch (e) { console.warn('[UserProfile] Local fallback load failed:', e); setProfile(DEFAULT_PROFILE); }
       setLoading(false);
     };
 
@@ -172,7 +172,7 @@ export function UserProfileProvider({ children }: { children: React.ReactNode })
       await supabase
         .from('user_profiles')
         .upsert(profileToRow(p, uid), { onConflict: 'id' });
-    } catch { /* silencioso */ }
+    } catch (e) { console.warn('[UserProfile] Supabase sync failed:', e); }
   }
 
   // ── Guardar: Supabase primero, AsyncStorage como caché ────────────────────
@@ -181,7 +181,7 @@ export function UserProfileProvider({ children }: { children: React.ReactNode })
     if (!user) return;
 
     // Siempre guardar en AsyncStorage como caché inmediata
-    try { await AsyncStorage.setItem(localKey(user.id), JSON.stringify(next)); } catch {}
+    try { await AsyncStorage.setItem(localKey(user.id), JSON.stringify(next)); } catch (e) { console.warn('[UserProfile] Local save failed:', e); }
 
     // Sincronizar a Supabase
     if (!IS_DEMO_MODE) {

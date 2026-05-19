@@ -250,7 +250,7 @@ export default function ParametersScreen() {
             trigger: null, // immediate
           });
         }
-      } catch { /* Notifications may not be available in all environments */ }
+      } catch (e) { console.warn('[Parameters] Notification failed:', e); }
     }
     // ─────────────────────────────────────────────────────────────────────────
 

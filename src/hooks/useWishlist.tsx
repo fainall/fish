@@ -57,13 +57,13 @@ export function WishlistProvider({ children }: { children: React.ReactNode }) {
           if (!error && data) {
             setItems(data); setLoading(false); return;
           }
-        } catch { /* fallback */ }
+        } catch (e) { console.warn('[Wishlist] Supabase load failed:', e); }
       }
       try {
         const raw = await AsyncStorage.getItem(localKey(user.id));
         if (raw) setItems(JSON.parse(raw));
         else setItems([]);
-      } catch { setItems([]); }
+      } catch (e) { console.warn('[Wishlist] Local load failed:', e); setItems([]); }
       setLoading(false);
     })();
   }, [user?.id]);
@@ -71,7 +71,7 @@ export function WishlistProvider({ children }: { children: React.ReactNode }) {
   const persistLocal = useCallback(async (next: WishlistItem[]) => {
     setItems(next);
     if (user) {
-      try { await AsyncStorage.setItem(localKey(user.id), JSON.stringify(next)); } catch {}
+      try { await AsyncStorage.setItem(localKey(user.id), JSON.stringify(next)); } catch (e) { console.warn('[Wishlist] Local persist failed:', e); }
     }
   }, [user]);
 
@@ -90,7 +90,7 @@ export function WishlistProvider({ children }: { children: React.ReactNode }) {
         const { data, error } = await supabase
           .from('wishlist').insert({ user_id: user.id, fish_id: fishId, note }).select().single();
         if (!error && data) { setItems(prev => [data, ...prev]); return; }
-      } catch { /* fallback */ }
+      } catch (e) { console.warn('[Wishlist] Supabase add failed:', e); }
     }
     await persistLocal([newItem, ...items]);
   }, [user, items, persistLocal]);
@@ -99,7 +99,7 @@ export function WishlistProvider({ children }: { children: React.ReactNode }) {
   const remove = useCallback(async (fishId: string) => {
     if (!user) return;
     if (!IS_DEMO_MODE) {
-      try { await supabase.from('wishlist').delete().match({ user_id: user.id, fish_id: fishId }); } catch {}
+      try { await supabase.from('wishlist').delete().match({ user_id: user.id, fish_id: fishId }); } catch (e) { console.warn('[Wishlist] Supabase delete failed:', e); }
     }
     await persistLocal(items.filter(i => i.fish_id !== fishId));
   }, [user, items, persistLocal]);
@@ -107,7 +107,7 @@ export function WishlistProvider({ children }: { children: React.ReactNode }) {
   const updateNote = useCallback(async (fishId: string, note: string) => {
     if (!user) return;
     if (!IS_DEMO_MODE) {
-      try { await supabase.from('wishlist').update({ note }).match({ user_id: user.id, fish_id: fishId }); } catch {}
+      try { await supabase.from('wishlist').update({ note }).match({ user_id: user.id, fish_id: fishId }); } catch (e) { console.warn('[Wishlist] Supabase updateNote failed:', e); }
     }
     await persistLocal(items.map(i => i.fish_id === fishId ? { ...i, note } : i));
   }, [user, items, persistLocal]);

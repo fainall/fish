@@ -37,12 +37,12 @@ async function requestPermission(): Promise<boolean> {
     if (status === 'granted') return true;
     const { status: next } = await Notifications.requestPermissionsAsync();
     return next === 'granted';
-  } catch { return false; }
+  } catch (e) { console.warn('[FertReminders] Permission check failed:', e); return false; }
 }
 
 async function cancelIds(ids: string[]) {
   for (const id of ids) {
-    try { await Notifications.cancelScheduledNotificationAsync(id); } catch { /* ignore */ }
+    try { await Notifications.cancelScheduledNotificationAsync(id); } catch (e) { console.warn('[FertReminders] Op failed:', e); }
   }
 }
 
@@ -66,7 +66,7 @@ async function scheduleWeekly(reminder: FertReminder, label: string): Promise<st
       } as any,
     });
     return [id];
-  } catch { return []; }
+  } catch (e) { console.warn('[FertReminders] Schedule failed:', e); return []; }
 }
 
 // ── Supabase mappers ──────────────────────────────────────────────────────────
@@ -116,7 +116,7 @@ export function useFertReminders() {
             }));
             return;
           }
-        } catch { /* fallback */ }
+        } catch (e) { console.warn('[FertReminders] Supabase load failed:', e); }
       }
       // AsyncStorage fallback
       try {
@@ -127,7 +127,7 @@ export function useFertReminders() {
           const found = saved.find(s => s.dayIndex === def.dayIndex);
           return found ? { ...def, ...found } : def;
         }));
-      } catch { /* ignore */ }
+      } catch (e) { console.warn('[FertReminders] Op failed:', e); }
     };
     load();
   }, [user?.id, getLocalKey]);
@@ -136,7 +136,7 @@ export function useFertReminders() {
   const persist = useCallback(async (list: FertReminder[]) => {
     setReminders(list);
     // Siempre cache local
-    try { await AsyncStorage.setItem(getLocalKey(), JSON.stringify(list)); } catch { /* ignore */ }
+    try { await AsyncStorage.setItem(getLocalKey(), JSON.stringify(list)); } catch (e) { console.warn('[FertReminders] Op failed:', e); }
     // Supabase
     if (!IS_DEMO_MODE && user) {
       try {
@@ -144,7 +144,7 @@ export function useFertReminders() {
           list.map(r => reminderToRow(r, user.id)),
           { onConflict: 'user_id,day_index' },
         );
-      } catch { /* ignore */ }
+      } catch (e) { console.warn('[FertReminders] Op failed:', e); }
     }
   }, [getLocalKey, user]);
 

@@ -60,7 +60,7 @@ export default function AdminDashboardScreen() {
           .from('users')
           .select('*', { count: 'exact', head: true });
         if (!error && count !== null) setUserCount(count);
-      } catch { /* ignore */ }
+      } catch (e) { console.warn('[AdminDash] User count failed:', e); }
     })();
   }, []);
 
@@ -149,7 +149,7 @@ export default function AdminDashboardScreen() {
       if (error) return null;
       const { data } = (supabase as any).storage.from('posts').getPublicUrl(path);
       return (data?.publicUrl as string) ?? null;
-    } catch { return null; }
+    } catch (e) { console.warn('[AdminDash] Image upload failed:', e); return null; }
   }
 
   async function pickImage(source: 'gallery' | 'camera') {

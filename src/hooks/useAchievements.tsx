@@ -127,12 +127,12 @@ export function AchievementsProvider({ children }: { children: React.ReactNode }
             initialized.current = true;
             return;
           }
-        } catch { /* fallback */ }
+        } catch (e) { console.warn('[Achievements] Supabase load failed:', e); }
       }
       try {
         const raw = await AsyncStorage.getItem(localKey(user.id));
         if (raw) setUnlocked(JSON.parse(raw));
-      } catch { /* ignore */ }
+      } catch (e) { console.warn('[Achievements] Local load failed:', e); }
       initialized.current = true;
     };
 
@@ -147,7 +147,7 @@ export function AchievementsProvider({ children }: { children: React.ReactNode }
         await supabase.from('user_achievements').insert({
           user_id: user.id, achievement_id: id, unlocked_at: now,
         });
-      } catch { /* ignore */ }
+      } catch (e) { console.warn('[Achievements] Supabase persist failed:', e); }
     }
     return { id, unlockedAt: now } as AchievementUnlock;
   }, [user]);
@@ -160,7 +160,7 @@ export function AchievementsProvider({ children }: { children: React.ReactNode }
     setUnlocked(next);
     persistUnlock(id);
     if (user) {
-      try { await AsyncStorage.setItem(localKey(user.id), JSON.stringify(next)); } catch {}
+      try { await AsyncStorage.setItem(localKey(user.id), JSON.stringify(next)); } catch (e) { console.warn('[Achievements] Local save failed:', e); }
     }
     const achievement = ACHIEVEMENTS.find(a => a.id === id);
     if (achievement) setNewBadge(achievement);

@@ -164,7 +164,7 @@ export default function UserProfileModal({ visible, userId, userName, posts, onC
         })));
         if (phs.data) setPhotos(phs.data as PublicPhoto[]);
         if (tks.data) setTasks(tks.data as PublicTask[]);
-      } catch { /* silent */ }
+      } catch (e) { console.warn('[UserProfileModal] Load failed:', e); }
       setLoading(false);
     })();
   }, [visible, userId, isDemoUser]);

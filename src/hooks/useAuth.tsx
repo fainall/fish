@@ -29,7 +29,7 @@ async function loadRegistered() {
   try {
     const raw = await AsyncStorage.getItem(REGISTERED_KEY);
     return raw ? (JSON.parse(raw) as Record<string, User & { password: string }>) : {};
-  } catch { return {}; }
+  } catch (e) { console.warn('[Auth] loadRegistered failed:', e); return {}; }
 }
 async function saveRegistered(users: Record<string, User & { password: string }>) {
   await AsyncStorage.setItem(REGISTERED_KEY, JSON.stringify(users));
@@ -56,14 +56,14 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
             const profile = await fetchProfile(session.user.id);
             if (profile && mounted) { setUser(profile); setLoading(false); return; }
           }
-        } catch { /* continúa */ }
+        } catch (e) { console.warn('[Auth] Supabase session check failed:', e); }
       }
 
       // 2. Sesión local (AsyncStorage)
       try {
         const raw = await AsyncStorage.getItem(SESSION_KEY);
         if (raw && mounted) setUser(JSON.parse(raw));
-      } catch { /* ignore */ }
+      } catch (e) { console.warn('[Auth] Local session load failed:', e); }
 
       if (mounted) setLoading(false);
     };
@@ -94,7 +94,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     try {
       const { data } = await supabase.from('users').select('*').eq('id', id).single();
       return data ?? null;
-    } catch { return null; }
+    } catch (e) { console.warn('[Auth] fetchProfile failed:', e); return null; }
   }
 
   // ── Sign in ────────────────────────────────────────────────────────────────
@@ -196,7 +196,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
   // ── Sign out ───────────────────────────────────────────────────────────────
   const signOut = async () => {
-    if (!IS_DEMO_MODE) { try { await supabase.auth.signOut(); } catch { /* ignore */ } }
+    if (!IS_DEMO_MODE) { try { await supabase.auth.signOut(); } catch (e) { console.warn('[Auth] signOut failed:', e); } }
     await clear();
   };
 

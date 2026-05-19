@@ -32,12 +32,12 @@ export function ParameterRecordsProvider({ children }: { children: React.ReactNo
             .eq('user_id', user.id)
             .order('date', { ascending: true });
           if (!error && data) { setRecords(data); return; }
-        } catch { /* fallback */ }
+        } catch (e) { console.warn('[Params] Supabase op failed:', e); }
       }
       try {
         const raw = await AsyncStorage.getItem(localKey(user.id));
         if (raw) setRecords(JSON.parse(raw));
-      } catch { /* ignore */ }
+      } catch (e) { console.warn('[Params] Local op failed:', e); }
     };
 
     load();
@@ -46,7 +46,7 @@ export function ParameterRecordsProvider({ children }: { children: React.ReactNo
   const persistLocal = async (list: ParameterRecord[]) => {
     setRecords(list);
     if (user) {
-      try { await AsyncStorage.setItem(localKey(user.id), JSON.stringify(list)); } catch { /* ignore */ }
+      try { await AsyncStorage.setItem(localKey(user.id), JSON.stringify(list)); } catch (e) { console.warn('[Params] Local op failed:', e); }
     }
   };
 
@@ -60,7 +60,7 @@ export function ParameterRecordsProvider({ children }: { children: React.ReactNo
           .select()
           .single();
         if (!error && data) { setRecords(prev => [...prev, data]); return; }
-      } catch { /* fallback */ }
+      } catch (e) { console.warn('[Params] Supabase op failed:', e); }
     }
     const full: ParameterRecord = { ...record, id: `pr-${Date.now()}` };
     await persistLocal([...records, full]);
@@ -69,7 +69,7 @@ export function ParameterRecordsProvider({ children }: { children: React.ReactNo
   // ── Delete ────────────────────────────────────────────────────────────────
   const deleteRecord = useCallback(async (id: string) => {
     if (!IS_DEMO_MODE) {
-      try { await supabase.from('parameter_records').delete().eq('id', id); } catch { /* fallback */ }
+      try { await supabase.from('parameter_records').delete().eq('id', id); } catch (e) { console.warn('[Params] Supabase op failed:', e); }
     }
     await persistLocal(records.filter(r => r.id !== id));
   }, [records, user]);

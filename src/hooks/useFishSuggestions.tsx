@@ -27,19 +27,19 @@ export function FishSuggestionsProvider({ children }: { children: React.ReactNod
           const { data, error } = await supabase
             .from('fish_suggestions').select('*').order('created_at', { ascending: false });
           if (!error && data) { setSuggestions(data); return; }
-        } catch { /* fallback */ }
+        } catch (e) { console.warn('[Suggestions] Supabase op failed:', e); }
       }
       try {
         const raw = await AsyncStorage.getItem(LOCAL_KEY);
         if (raw) setSuggestions(JSON.parse(raw));
-      } catch { /* ignore */ }
+      } catch (e) { console.warn('[Suggestions] Op failed:', e); }
     };
     load();
   }, []);
 
   const persistLocal = async (list: FishSuggestion[]) => {
     setSuggestions(list);
-    try { await AsyncStorage.setItem(LOCAL_KEY, JSON.stringify(list)); } catch { /* ignore */ }
+    try { await AsyncStorage.setItem(LOCAL_KEY, JSON.stringify(list)); } catch (e) { console.warn('[Suggestions] Op failed:', e); }
   };
 
   // ── Add ───────────────────────────────────────────────────────────────────
@@ -53,7 +53,7 @@ export function FishSuggestionsProvider({ children }: { children: React.ReactNod
           .select()
           .single();
         if (!error && row) { setSuggestions(prev => [row, ...prev]); return; }
-      } catch { /* fallback */ }
+      } catch (e) { console.warn('[Suggestions] Supabase op failed:', e); }
     }
     // Local fallback (demo mode)
     const suggestion: FishSuggestion = {
@@ -72,7 +72,7 @@ export function FishSuggestionsProvider({ children }: { children: React.ReactNod
       try {
         await supabase.from('fish_suggestions')
           .update({ status: 'approved', reviewed_at: now }).eq('id', id);
-      } catch { /* ignore */ }
+      } catch (e) { console.warn('[Suggestions] Op failed:', e); }
     }
     await persistLocal(suggestions.map(s =>
       s.id === id ? { ...s, status: 'approved' as SuggestionStatus, reviewed_at: now } : s
@@ -87,7 +87,7 @@ export function FishSuggestionsProvider({ children }: { children: React.ReactNod
       try {
         await supabase.from('fish_suggestions')
           .update({ status: 'rejected', reviewed_at: now, reject_reason: reason }).eq('id', id);
-      } catch { /* ignore */ }
+      } catch (e) { console.warn('[Suggestions] Op failed:', e); }
     }
     await persistLocal(suggestions.map(s =>
       s.id === id
@@ -99,7 +99,7 @@ export function FishSuggestionsProvider({ children }: { children: React.ReactNod
   // ── Delete ────────────────────────────────────────────────────────────────
   const deleteSuggestion = async (id: string) => {
     if (!IS_DEMO_MODE) {
-      try { await supabase.from('fish_suggestions').delete().eq('id', id); } catch { /* ignore */ }
+      try { await supabase.from('fish_suggestions').delete().eq('id', id); } catch (e) { console.warn('[Suggestions] Op failed:', e); }
     }
     await persistLocal(suggestions.filter(s => s.id !== id));
   };

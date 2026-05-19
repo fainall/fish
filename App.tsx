@@ -60,7 +60,7 @@ export default function App() {
           // We intentionally do NOT call reloadAsync() here because it can
           // trigger an infinite reload loop if called unconditionally on boot.
         }
-      } catch { /* offline or update server unreachable — silent */ }
+      } catch (e) { console.warn('[Updates] OTA check failed:', e); }
     })();
     return () => { cancelled = true; };
   }, []);

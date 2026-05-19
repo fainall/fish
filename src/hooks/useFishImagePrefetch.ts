@@ -52,7 +52,7 @@ export function useFishImagePrefetch() {
         }
 
         await AsyncStorage.setItem(PREFETCH_KEY, '1');
-      } catch { /* best-effort */ }
+      } catch (e) { console.warn('[ImagePrefetch] Failed:', e); }
     })();
     return () => { cancelled = true; };
   }, []);

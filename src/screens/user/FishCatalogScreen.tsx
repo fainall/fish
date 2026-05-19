@@ -976,7 +976,7 @@ export default function FishCatalogScreen({ embedded, navigation }: { embedded?:
     </Animated.View>
   ), [mode, compatSelectedSet, toggleCompat, wishlist]);
 
-  const Wrapper = embedded ? View : LinearGradient;
+  const Wrapper = (embedded ? View : LinearGradient) as React.ComponentType<any>;
   const wrapperProps = embedded ? { style: styles.container } : { colors: ['#EDF6FB', '#F4FAFD'], style: styles.container };
 
   return (
