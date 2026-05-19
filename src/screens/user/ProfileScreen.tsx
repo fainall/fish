@@ -13,7 +13,7 @@ import { useResponsive } from '../../hooks/useResponsive';
 import { useUserProfile } from '../../hooks/useUserProfile';
 import { useAuth } from '../../hooks/useAuth';
 import { useAquariums } from '../../hooks/useAquariums';
-import { useAchievements, ACHIEVEMENTS } from '../../hooks/useAchievements';
+import { useAchievements, ACHIEVEMENTS, AQUARIST_LEVELS } from '../../hooks/useAchievements';
 import { ExperienceLevel } from '../../constants/tips';
 import { useScalePress } from '../../utils/animations';
 
@@ -67,7 +67,7 @@ export default function ProfileScreen({ onClose, navigation }: Props) {
   const { user, signOut } = useAuth();
   const { profile, updateProfile, resetOnboarding } = useUserProfile();
   const { clearAllAquariums } = useAquariums();
-  const { unlocked } = useAchievements();
+  const { unlocked, level, nextLevel } = useAchievements();
 
   const [displayName, setDisplayName] = useState(profile.display_name || user?.full_name || '');
   const [experience, setExperience] = useState<ExperienceLevel>(profile.experience);
@@ -81,8 +81,6 @@ export default function ProfileScreen({ onClose, navigation }: Props) {
   const daysActive = profile.completed_at
     ? Math.floor((Date.now() - new Date(profile.completed_at).getTime()) / 86400000)
     : 0;
-  const expOption = EXPERIENCE_OPTIONS.find(e => e.value === experience)!;
-
   const pickAvatar = async () => {
     const { status } = await ImagePicker.requestMediaLibraryPermissionsAsync();
     if (status !== 'granted') {
@@ -173,10 +171,10 @@ export default function ProfileScreen({ onClose, navigation }: Props) {
           </Text>
           <Text style={[styles.heroEmail, { fontSize: fs(13) }]}>{user?.email}</Text>
 
-          {/* Exp badge */}
-          <View style={[styles.expBadge, { backgroundColor: expOption.color + '18', borderColor: expOption.color + '40' }]}>
-            <Ionicons name={expOption.icon as any} size={13} color={expOption.color} />
-            <Text style={[styles.expBadgeText, { color: expOption.color }]}>{expOption.label}</Text>
+          {/* Aquarist level badge */}
+          <View style={[styles.expBadge, { backgroundColor: level.color + '18', borderColor: level.color + '40' }]}>
+            <Text style={{ fontSize: 13 }}>{level.icon}</Text>
+            <Text style={[styles.expBadgeText, { color: level.color }]}>{level.label}</Text>
           </View>
         </RAnimated.View>
 
@@ -185,7 +183,7 @@ export default function ProfileScreen({ onClose, navigation }: Props) {
           {([
             { icon: 'trophy',   color: COLORS.accent,  value: String(totalBadges), label: 'Logros' },
             { icon: 'calendar', color: COLORS.primary,  value: String(daysActive),  label: 'Días activo' },
-            { icon: expOption.icon, color: expOption.color, value: experience === 'advanced' ? 'Avanz.' : experience === 'intermediate' ? 'Medio' : 'Inicio', label: 'Nivel' },
+            { icon: 'star',     color: level.color,     value: level.label.split(' ')[0], label: 'Nivel' },
           ] as const).map((stat, i) => (
             <RAnimated.View
               key={stat.label}
@@ -217,35 +215,68 @@ export default function ProfileScreen({ onClose, navigation }: Props) {
           />
         </RAnimated.View>
 
-        {/* ── Experience selector ─────────────────────────────────────────────── */}
+        {/* ── Aquarist level (based on achievements) ───────────────────────── */}
         <RAnimated.View
           entering={FadeInDown.delay(420).duration(450).springify().damping(16)}
           style={styles.sectionWrap}
         >
-          <Text style={styles.formLabel}>Nivel de experiencia</Text>
-          {EXPERIENCE_OPTIONS.map((opt, i) => {
-            const active = experience === opt.value;
-            return (
-              <TouchableOpacity
-                key={opt.value}
-                style={[
-                  styles.expCard,
-                  active && { borderColor: opt.color + '55', backgroundColor: opt.color + '14' },
-                ]}
-                onPress={() => setExperience(opt.value)}
-                activeOpacity={0.75}
-              >
-                <View style={[styles.expIconWrap, { backgroundColor: active ? opt.color + '22' : COLORS.backgroundLight, borderWidth: 1, borderColor: active ? opt.color + '44' : COLORS.border }]}>
-                  <Ionicons name={opt.icon as any} size={20} color={active ? opt.color : COLORS.textMuted} />
+          <Text style={styles.formLabel}>Nivel de acuarista</Text>
+          <View style={[styles.levelDetailCard, { borderColor: level.color + '44' }]}>
+            <View style={styles.levelDetailTop}>
+              <View style={[styles.levelDetailIcon, { backgroundColor: level.color + '18' }]}>
+                <Text style={{ fontSize: 28 }}>{level.icon}</Text>
+              </View>
+              <View style={{ flex: 1 }}>
+                <Text style={[styles.levelDetailName, { color: level.color }]}>{level.label}</Text>
+                <Text style={styles.levelDetailSub}>
+                  {totalBadges} logro{totalBadges !== 1 ? 's' : ''} desbloqueado{totalBadges !== 1 ? 's' : ''}
+                </Text>
+              </View>
+            </View>
+            {nextLevel && (
+              <View style={styles.levelDetailProgress}>
+                <View style={styles.levelDetailBarBg}>
+                  <View style={[
+                    styles.levelDetailBarFill,
+                    {
+                      backgroundColor: level.color,
+                      width: `${Math.round(((totalBadges - level.minAchievements) / (nextLevel.minAchievements - level.minAchievements)) * 100)}%`,
+                    },
+                  ]} />
                 </View>
-                <View style={styles.expBody}>
-                  <Text style={[styles.expLabel, active && { color: opt.color }]}>{opt.label}</Text>
-                  <Text style={styles.expDesc}>{opt.desc}</Text>
+                <Text style={[styles.levelDetailNext, { color: nextLevel.color }]}>
+                  {nextLevel.icon} {nextLevel.label} — {nextLevel.minAchievements - totalBadges} logro{(nextLevel.minAchievements - totalBadges) !== 1 ? 's' : ''} más
+                </Text>
+              </View>
+            )}
+            {!nextLevel && (
+              <Text style={[styles.levelDetailNext, { color: level.color, marginTop: 8, textAlign: 'center' }]}>
+                🏆 ¡Nivel máximo alcanzado!
+              </Text>
+            )}
+          </View>
+
+          {/* All levels preview */}
+          <View style={styles.allLevelsRow}>
+            {AQUARIST_LEVELS.map(lv => {
+              const reached = totalBadges >= lv.minAchievements;
+              const isCurrent = lv.id === level.id;
+              return (
+                <View key={lv.id} style={[
+                  styles.levelPill,
+                  reached && { backgroundColor: lv.color + '18', borderColor: lv.color + '44' },
+                  isCurrent && { backgroundColor: lv.color + '28', borderColor: lv.color },
+                ]}>
+                  <Text style={{ fontSize: 14 }}>{reached ? lv.icon : '🔒'}</Text>
+                  <Text style={[
+                    styles.levelPillText,
+                    reached && { color: lv.color },
+                    !reached && { color: COLORS.textMuted },
+                  ]}>{lv.minAchievements}</Text>
                 </View>
-                {active && <Ionicons name="checkmark-circle" size={22} color={opt.color} />}
-              </TouchableOpacity>
-            );
-          })}
+              );
+            })}
+          </View>
         </RAnimated.View>
 
         {/* ── Recent achievements ─────────────────────────────────────────────── */}
@@ -558,4 +589,37 @@ const styles = StyleSheet.create({
   actionDivider: { height: 1, backgroundColor: COLORS.border, marginHorizontal: SPACING.md },
   actionIcon: { width: 36, height: 36, borderRadius: 10, alignItems: 'center', justifyContent: 'center' },
   actionText: { flex: 1, fontSize: 15, fontFamily: FONTS.sansMd },
+
+  // Aquarist level detail card
+  levelDetailCard: {
+    backgroundColor: COLORS.backgroundCard,
+    borderRadius: BORDER_RADIUS.xl, borderWidth: 1,
+    padding: SPACING.md, marginBottom: SPACING.sm,
+  },
+  levelDetailTop: {
+    flexDirection: 'row', alignItems: 'center', gap: 12, marginBottom: 4,
+  },
+  levelDetailIcon: {
+    width: 52, height: 52, borderRadius: 26,
+    alignItems: 'center', justifyContent: 'center',
+  },
+  levelDetailName: { fontSize: 20, fontFamily: FONTS.sansEb, marginBottom: 2 },
+  levelDetailSub: { fontSize: 12, fontFamily: FONTS.sans, color: COLORS.textMuted },
+  levelDetailProgress: { marginTop: SPACING.sm },
+  levelDetailBarBg: {
+    height: 8, backgroundColor: COLORS.background, borderRadius: 4, overflow: 'hidden',
+    marginBottom: 6,
+  },
+  levelDetailBarFill: { height: '100%', borderRadius: 4, minWidth: 4 },
+  levelDetailNext: { fontSize: 12, fontFamily: FONTS.sansBd },
+
+  allLevelsRow: {
+    flexDirection: 'row', justifyContent: 'space-between', gap: 4,
+  },
+  levelPill: {
+    flex: 1, alignItems: 'center', paddingVertical: 6,
+    borderRadius: BORDER_RADIUS.md, borderWidth: 1,
+    borderColor: COLORS.border, backgroundColor: COLORS.backgroundCard,
+  },
+  levelPillText: { fontSize: 9, fontFamily: FONTS.sansBd, marginTop: 2 },
 });
