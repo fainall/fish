@@ -7,20 +7,12 @@ import { User } from '../types';
 const SESSION_KEY     = '@aquamanager_session';
 const REGISTERED_KEY  = '@aquamanager_registered_users';
 
-interface GoogleUserInfo {
-  id: string; email: string; name: string;
-  picture?: string; given_name?: string; family_name?: string;
-  /** JWT id_token from Google — used with supabase.auth.signInWithIdToken in real mode */
-  idToken?: string;
-}
-
 interface AuthContextType {
   user: User | null;
   loading: boolean;
-  signIn:           (email: string, password: string) => Promise<{ error: string | null }>;
-  signUp:           (email: string, password: string, fullName: string) => Promise<{ error: string | null; needsConfirmation?: boolean }>;
-  signInWithGoogle: (googleUser: GoogleUserInfo) => Promise<{ error: string | null }>;
-  signOut:          () => Promise<void>;
+  signIn:  (email: string, password: string) => Promise<{ error: string | null }>;
+  signUp:  (email: string, password: string, fullName: string) => Promise<{ error: string | null; needsConfirmation?: boolean }>;
+  signOut: () => Promise<void>;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -197,11 +189,6 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     return { error: null };
   };
 
-  // ── Sign in with Google ────────────────────────────────────────────────────
-  const signInWithGoogle = async (_googleUser: GoogleUserInfo): Promise<{ error: string | null }> => {
-    return { error: 'Google Sign-In no está disponible.' };
-  };
-
   // ── Sign out ───────────────────────────────────────────────────────────────
   const signOut = async () => {
     if (!IS_DEMO_MODE) { try { await supabase.auth.signOut(); } catch (e) { console.warn('[Auth] signOut failed:', e); } }
@@ -209,7 +196,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   };
 
   return (
-    <AuthContext.Provider value={{ user, loading, signIn, signUp, signInWithGoogle, signOut }}>
+    <AuthContext.Provider value={{ user, loading, signIn, signUp, signOut }}>
       {children}
     </AuthContext.Provider>
   );

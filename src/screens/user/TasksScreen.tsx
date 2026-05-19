@@ -15,8 +15,8 @@ const TASK_TYPES  = Object.entries(TASK_TYPE_INFO)  as [TaskType, typeof TASK_TY
 const RECURRENCES = Object.entries(RECURRENCE_LABELS) as [RecurrenceType, string][];
 
 // ── Task card (Airbnb-style) ──────────────────────────────────────────────────
-function TaskCard({ task, onToggle, onDelete }: {
-  task: AquariumTask; onToggle: () => void; onDelete: () => void;
+function TaskCard({ task, onToggle, onDelete, onEdit }: {
+  task: AquariumTask; onToggle: () => void; onDelete: () => void; onEdit: () => void;
 }) {
   const info     = TASK_TYPE_INFO[task.type];
   const dueDate  = new Date(task.due_date);
@@ -82,10 +82,15 @@ function TaskCard({ task, onToggle, onDelete }: {
         </View>
       </View>
 
-      {/* Delete */}
-      <TouchableOpacity onPress={onDelete} style={styles.taskDelete}>
-        <Ionicons name="trash-outline" size={15} color={COLORS.error + '80'} />
-      </TouchableOpacity>
+      {/* Actions */}
+      <View style={styles.taskActions}>
+        <TouchableOpacity onPress={onEdit} style={styles.taskActionBtn}>
+          <Ionicons name="create-outline" size={15} color={COLORS.primary + '90'} />
+        </TouchableOpacity>
+        <TouchableOpacity onPress={onDelete} style={styles.taskActionBtn}>
+          <Ionicons name="trash-outline" size={15} color={COLORS.error + '80'} />
+        </TouchableOpacity>
+      </View>
     </View>
   );
 }
@@ -104,10 +109,11 @@ function dateGroupKey(isoDate: string): string {
 // ── Main Screen ───────────────────────────────────────────────────────────────
 export default function TasksScreen() {
   const { aquariums, selectedAquarium, selectedId, selectAquarium } = useAquariums();
-  const { tasksFor, overdueCount, addTask, toggleComplete, deleteTask } = useTasks();
+  const { tasksFor, overdueCount, addTask, updateTask, toggleComplete, deleteTask } = useTasks();
 
   const [showModal,     setShowModal]     = useState(false);
   const [showCompleted, setShowCompleted] = useState(false);
+  const [editingTask,   setEditingTask]   = useState<AquariumTask | null>(null);
 
   const [formTitle,      setFormTitle]      = useState('');
   const [formDesc,       setFormDesc]       = useState('');
@@ -140,6 +146,19 @@ export default function TasksScreen() {
   const resetForm = () => {
     setFormTitle(''); setFormDesc(''); setFormType('water_change');
     setFormRecurrence('none'); setFormDate(''); setFormTime('');
+    setEditingTask(null);
+  };
+
+  const openEdit = (task: AquariumTask) => {
+    const d = new Date(task.due_date);
+    setEditingTask(task);
+    setFormTitle(task.title);
+    setFormDesc(task.description ?? '');
+    setFormType(task.type);
+    setFormRecurrence(task.recurrence);
+    setFormDate(`${String(d.getDate()).padStart(2, '0')}/${String(d.getMonth() + 1).padStart(2, '0')}/${d.getFullYear()}`);
+    setFormTime(`${String(d.getHours()).padStart(2, '0')}:${String(d.getMinutes()).padStart(2, '0')}`);
+    setShowModal(true);
   };
 
   const handleSave = async () => {
@@ -167,11 +186,19 @@ export default function TasksScreen() {
       Alert.alert('Error', 'Esa fecha no existe en el calendario.'); return;
     }
     if (isNaN(due.getTime())) { Alert.alert('Error', 'Fecha inválida.'); return; }
-    await addTask({
-      aquarium_id: selectedAquarium.id, type: formType,
-      title: formTitle.trim(), description: formDesc.trim() || undefined,
-      due_date: due.toISOString(), recurrence: formRecurrence,
-    });
+    if (editingTask) {
+      await updateTask(editingTask.id, {
+        type: formType, title: formTitle.trim(),
+        description: formDesc.trim() || undefined,
+        due_date: due.toISOString(), recurrence: formRecurrence,
+      });
+    } else {
+      await addTask({
+        aquarium_id: selectedAquarium.id, type: formType,
+        title: formTitle.trim(), description: formDesc.trim() || undefined,
+        due_date: due.toISOString(), recurrence: formRecurrence,
+      });
+    }
     resetForm(); setShowModal(false);
   };
 
@@ -284,6 +311,7 @@ export default function TasksScreen() {
                   <TaskCard key={task.id} task={task}
                     onToggle={() => toggleComplete(task.id)}
                     onDelete={() => confirmDelete(task.id, task.title)}
+                    onEdit={() => openEdit(task)}
                   />
                 ))}
               </View>
@@ -304,6 +332,7 @@ export default function TasksScreen() {
                   <TaskCard key={task.id} task={task}
                     onToggle={() => toggleComplete(task.id)}
                     onDelete={() => confirmDelete(task.id, task.title)}
+                    onEdit={() => openEdit(task)}
                   />
                 ))}
               </>
@@ -322,7 +351,7 @@ export default function TasksScreen() {
 
             {/* Modal header */}
             <View style={styles.sheetHeader}>
-              <Text style={styles.sheetTitle}>Nueva tarea</Text>
+              <Text style={styles.sheetTitle}>{editingTask ? 'Editar tarea' : 'Nueva tarea'}</Text>
               <TouchableOpacity onPress={() => { setShowModal(false); resetForm(); }} style={styles.sheetClose}>
                 <Ionicons name="close" size={20} color={COLORS.textMuted} />
               </TouchableOpacity>
@@ -415,7 +444,7 @@ export default function TasksScreen() {
               </TouchableOpacity>
               <TouchableOpacity style={styles.saveBtn} onPress={handleSave}>
                 <Ionicons name="checkmark-circle" size={18} color="#fff" />
-                <Text style={styles.saveBtnText}>Crear tarea</Text>
+                <Text style={styles.saveBtnText}>{editingTask ? 'Guardar cambios' : 'Crear tarea'}</Text>
               </TouchableOpacity>
             </View>
           </View>
@@ -526,7 +555,8 @@ const styles = StyleSheet.create({
   taskMeta: { flexDirection: 'row', alignItems: 'center', gap: 4 },
   taskMetaText: { fontSize: 11, fontFamily: FONTS.sans, color: COLORS.textMuted },
 
-  taskDelete: { padding: SPACING.md, paddingLeft: SPACING.sm },
+  taskActions: { paddingTop: SPACING.md, paddingRight: SPACING.sm, gap: 8 },
+  taskActionBtn: { padding: 4 },
 
   // Completed toggle
   completedToggle: {

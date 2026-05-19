@@ -12,6 +12,7 @@ import { useAquariums } from './useAquariums';
 import { useParameterRecords } from './useParameterRecords';
 import { useTasks } from './useTasks';
 import { useFishDatabase } from './useFishDatabase';
+import { useBreeding, BreedingGoal } from './useBreeding';
 import { getStyleInfo } from '../data/aquariumStyles';
 
 const localKey = (uid: string) => `@aquamanager_achievements_${uid}`;
@@ -50,7 +51,7 @@ function extractRegion(origin: string): string {
 
 function checks(
   aquariums: AquariumEntry[], records: ParameterRecord[],
-  tasks: AquariumTask[], fishDb: Fish[],
+  tasks: AquariumTask[], fishDb: Fish[], breedingGoals: BreedingGoal[],
 ): Record<AchievementId, boolean> {
   const perfect10 = aquariums.some(aq => {
     const recs = records.filter(r => r.aquarium_id === aq.id)
@@ -75,7 +76,7 @@ function checks(
     first_parameter:   records.length >= 1,
     first_fish:        aquariums.some(a => a.fish.length > 0),
     water_change_done: tasks.some(t => t.type === 'water_change' && t.completed),
-    first_breeding:    false,
+    first_breeding:    breedingGoals.some(g => g.status === 'success'),
     perfect_10:        perfect10,
     schooling_complete: aquariums.some(a => a.fish.some(e => {
       const f = fishDb.find(f => f.id === e.fishId);
@@ -108,6 +109,7 @@ export function AchievementsProvider({ children }: { children: React.ReactNode }
   const { records }   = useParameterRecords();
   const { tasks }     = useTasks();
   const { fish: fishDb } = useFishDatabase();
+  const { goals: breedingGoals } = useBreeding();
 
   const [unlocked, setUnlocked] = useState<AchievementUnlock[]>([]);
   const [newBadge, setNewBadge] = useState<Achievement | null>(null);
@@ -169,7 +171,7 @@ export function AchievementsProvider({ children }: { children: React.ReactNode }
   // ── Reactive check ────────────────────────────────────────────────────────
   useEffect(() => {
     if (!initialized.current || !user) return;
-    const result = checks(aquariums, records, tasks, fishDb);
+    const result = checks(aquariums, records, tasks, fishDb, breedingGoals);
 
     const currentIds = new Set(unlocked.map(u => u.id));
     const toAdd: AchievementUnlock[] = [];
@@ -195,7 +197,7 @@ export function AchievementsProvider({ children }: { children: React.ReactNode }
     const toastTarget = toAdd.find(u => u.id === 'master') ?? toAdd[0];
     const achievement = ACHIEVEMENTS.find(a => a.id === toastTarget.id);
     if (achievement) setNewBadge(achievement);
-  }, [aquariums, records, tasks, fishDb, user, unlocked, persistUnlock]);
+  }, [aquariums, records, tasks, fishDb, breedingGoals, user, unlocked, persistUnlock]);
 
   return (
     <AchievementsContext.Provider value={{

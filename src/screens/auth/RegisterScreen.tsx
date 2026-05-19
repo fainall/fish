@@ -8,11 +8,9 @@ import { LinearGradient } from 'expo-linear-gradient';
 import { Ionicons } from '@expo/vector-icons';
 import { COLORS, FONTS, SPACING, BORDER_RADIUS } from '../../constants/theme';
 import { useAuth } from '../../hooks/useAuth';
-import { useGoogleAuth } from '../../hooks/useGoogleAuth';
 
 export default function RegisterScreen({ navigation }: any) {
   const { signUp } = useAuth();
-  const { signIn: googleSignIn, loading: googleLoading, ready: googleReady } = useGoogleAuth();
   const [fullName, setFullName]               = useState('');
   const [email, setEmail]                     = useState('');
   const [password, setPassword]               = useState('');
@@ -66,29 +64,6 @@ export default function RegisterScreen({ navigation }: any) {
             <Text style={styles.subtitle}>Únete a la comunidad acuarista</Text>
           </View>
 
-          {/* Google button */}
-          <TouchableOpacity
-            style={[styles.googleBtn, googleLoading && styles.btnDisabled]}
-            onPress={googleSignIn}
-            disabled={googleLoading || !googleReady}
-          >
-            {googleLoading ? (
-              <ActivityIndicator color="#555" size="small" />
-            ) : (
-              <>
-                <GoogleIcon />
-                <Text style={styles.googleBtnText}>Registrarse con Google</Text>
-              </>
-            )}
-          </TouchableOpacity>
-
-          {/* Divider */}
-          <View style={styles.divider}>
-            <View style={styles.dividerLine} />
-            <Text style={styles.dividerText}>o con correo</Text>
-            <View style={styles.dividerLine} />
-          </View>
-
           {/* Form */}
           <View style={styles.form}>
             {[
@@ -138,14 +113,6 @@ export default function RegisterScreen({ navigation }: any) {
   );
 }
 
-function GoogleIcon() {
-  return (
-    <View style={styles.googleIcon}>
-      <Text style={styles.googleIconText}>G</Text>
-    </View>
-  );
-}
-
 const styles = StyleSheet.create({
   container: { flex: 1 },
   flex: { flex: 1 },
@@ -155,26 +122,7 @@ const styles = StyleSheet.create({
   title: { fontSize: 28, fontWeight: 'bold', color: COLORS.text, marginTop: SPACING.sm, fontFamily: FONTS.sansEb },
   subtitle: { fontSize: 14, color: COLORS.textSecondary, marginTop: 4, fontFamily: FONTS.sans },
 
-  // Google
-  googleBtn: {
-    flexDirection: 'row', alignItems: 'center', justifyContent: 'center',
-    gap: 12, backgroundColor: '#ffffff', borderRadius: BORDER_RADIUS.md,
-    padding: 14, marginBottom: SPACING.md,
-    shadowColor: '#000', shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.15, shadowRadius: 4, elevation: 3,
-  },
-  googleBtnText: { color: '#3c4043', fontWeight: '600', fontSize: 15, fontFamily: FONTS.sansSb },
-  googleIcon: {
-    width: 22, height: 22, borderRadius: 11,
-    backgroundColor: '#4285F4', alignItems: 'center', justifyContent: 'center',
-  },
-  googleIconText: { color: '#fff', fontWeight: 'bold', fontSize: 13, fontFamily: FONTS.sansBd },
   btnDisabled: { opacity: 0.6 },
-
-  // Divider
-  divider: { flexDirection: 'row', alignItems: 'center', gap: SPACING.sm, marginBottom: SPACING.md },
-  dividerLine: { flex: 1, height: 1, backgroundColor: COLORS.border },
-  dividerText: { color: COLORS.textMuted, fontSize: 12, fontFamily: FONTS.sans },
 
   // Form
   form: {},
