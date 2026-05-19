@@ -11,7 +11,7 @@ import { useAuth } from '../../hooks/useAuth';
 import { useUserProfile } from '../../hooks/useUserProfile';
 import { useAquariums } from '../../hooks/useAquariums';
 import { useTasks } from '../../hooks/useTasks';
-import { useAchievements, ACHIEVEMENTS, RARITY_COLORS } from '../../hooks/useAchievements';
+import { useAchievements, ACHIEVEMENTS, RARITY_COLORS, getAquaristLevel } from '../../hooks/useAchievements';
 import { useFishDatabase } from '../../hooks/useFishDatabase';
 import { useParameterRecords } from '../../hooks/useParameterRecords';
 import { getDailyTip } from '../../constants/tips';
@@ -74,7 +74,7 @@ export default function HomeScreen({ navigation }: any) {
   const { profile }                 = useUserProfile();
   const { aquariums, selectedAquarium, loading: aqLoading } = useAquariums();
   const { pendingTasks, overdueCount }  = useTasks();
-  const { unlocked }                = useAchievements();
+  const { unlocked, level }         = useAchievements();
   const { fish: allFish, loading: fishLoading } = useFishDatabase();
   const { recordsFor }              = useParameterRecords();
   const [refreshing, setRefreshing] = useState(false);
@@ -381,7 +381,13 @@ export default function HomeScreen({ navigation }: any) {
         {/* ── Logros ── */}
         <RAnimated.View entering={FadeInDown.delay(550).duration(500).springify().damping(16)}>
           <View style={styles.sectionRow}>
-            <Text style={styles.sectionTitle}>Logros</Text>
+            <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
+              <Text style={styles.sectionTitle}>Logros</Text>
+              <View style={{ flexDirection: 'row', alignItems: 'center', backgroundColor: level.color + '18', paddingHorizontal: 8, paddingVertical: 2, borderRadius: 10 }}>
+                <Text style={{ fontSize: 12 }}>{level.icon}</Text>
+                <Text style={{ fontSize: 11, fontWeight: '700', color: level.color, marginLeft: 3, fontFamily: FONTS.sansBd }}>{level.label}</Text>
+              </View>
+            </View>
             <TouchableOpacity style={styles.seeAllBtn} onPress={() => setShowAchievements(true)}>
               <Text style={styles.seeAllText}>Ver todos</Text>
               <Ionicons name="chevron-forward" size={14} color={COLORS.primary} />

@@ -525,7 +525,7 @@ export default function CommunityScreen() {
     toggleLike, loadComments, addComment, createPost, reload, loadMore,
   } = useCommunity();
 
-  const { unlocked } = useAchievements();
+  const { unlocked, unlock } = useAchievements();
 
   // My unlocked achievements (newest first) for the share-logros shortcut
   const achievementsList = useMemo(() => {
@@ -579,6 +579,7 @@ export default function CommunityScreen() {
 
   function handleCreatePost(content: string, imageUrl: string, tags: string[], achievementId?: string) {
     createPost(content, imageUrl, tags, achievementId);
+    unlock('community_first');
     setShareAchId(undefined);
   }
 

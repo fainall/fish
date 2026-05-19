@@ -10,6 +10,7 @@ import {
   useAchievements,
   ACHIEVEMENTS,
   RARITY_COLORS,
+  AQUARIST_LEVELS,
   AchievementProgress,
 } from '../../hooks/useAchievements';
 import { useAnimatedWidth } from '../../utils/animations';
@@ -26,12 +27,19 @@ const RARITY_ORDER = ['bronze', 'silver', 'gold', 'platinum'] as const;
 interface Props { onClose: () => void; }
 
 export default function AchievementsScreen({ onClose }: Props) {
-  const { unlocked, unlockedIds, progress } = useAchievements();
+  const { unlocked, unlockedIds, progress, level, nextLevel } = useAchievements();
 
   const unlockedCount  = unlocked.length;
   const totalCount     = ACHIEVEMENTS.length;
   const progressPct    = Math.round((unlockedCount / totalCount) * 100);
   const animatedBarWidth = useAnimatedWidth(progressPct, 500, 1000);
+
+  // Level progress
+  const nextMin = nextLevel?.minAchievements ?? totalCount;
+  const levelProgressPct = nextLevel
+    ? Math.round(((unlockedCount - level.minAchievements) / (nextMin - level.minAchievements)) * 100)
+    : 100;
+  const animatedLevelBar = useAnimatedWidth(levelProgressPct, 700, 1200);
 
   // Group by rarity
   const grouped = RARITY_ORDER.map(rarity => ({
@@ -53,9 +61,85 @@ export default function AchievementsScreen({ onClose }: Props) {
 
       <ScrollView showsVerticalScrollIndicator={false}>
 
-        {/* Progress card */}
+        {/* Aquarist Level card */}
         <RAnimated.View
           entering={FadeInDown.duration(500).springify().damping(16)}
+          style={[styles.levelCard, { borderColor: level.color + '44' }]}
+        >
+          <LinearGradient
+            colors={[level.color + '15', level.color + '08']}
+            style={styles.levelGradient}
+          >
+            <View style={styles.levelTop}>
+              <View style={[styles.levelIconWrap, { backgroundColor: level.color + '22' }]}>
+                <Text style={styles.levelIcon}>{level.icon}</Text>
+              </View>
+              <View style={styles.levelInfo}>
+                <Text style={styles.levelLabel}>Nivel de acuarista</Text>
+                <Text style={[styles.levelName, { color: level.color }]}>{level.label}</Text>
+              </View>
+              <View style={[styles.levelBadge, { backgroundColor: level.color + '22' }]}>
+                <Text style={[styles.levelBadgeText, { color: level.color }]}>{unlockedCount}</Text>
+                <Text style={[styles.levelBadgeSub, { color: level.color }]}>logros</Text>
+              </View>
+            </View>
+
+            {nextLevel && (
+              <View style={styles.levelProgressSection}>
+                <View style={styles.levelProgressHeader}>
+                  <Text style={styles.levelProgressLabel}>
+                    Siguiente: {nextLevel.icon} {nextLevel.label}
+                  </Text>
+                  <Text style={[styles.levelProgressCount, { color: nextLevel.color }]}>
+                    {unlockedCount}/{nextMin}
+                  </Text>
+                </View>
+                <View style={styles.levelBarBg}>
+                  <RAnimated.View style={[{ height: '100%', borderRadius: 4, overflow: 'hidden' }, animatedLevelBar]}>
+                    <LinearGradient
+                      colors={[level.color, nextLevel.color]}
+                      style={{ flex: 1, borderRadius: 4 }}
+                      start={{ x: 0, y: 0 }} end={{ x: 1, y: 0 }}
+                    />
+                  </RAnimated.View>
+                </View>
+              </View>
+            )}
+
+            {!nextLevel && (
+              <View style={styles.maxLevelBanner}>
+                <Text style={styles.maxLevelText}>🏆 ¡Nivel máximo alcanzado!</Text>
+              </View>
+            )}
+          </LinearGradient>
+
+          {/* Level milestones */}
+          <View style={styles.milestonesRow}>
+            {AQUARIST_LEVELS.map((lv, i) => {
+              const reached = unlockedCount >= lv.minAchievements;
+              return (
+                <View key={lv.id} style={styles.milestoneItem}>
+                  <View style={[
+                    styles.milestoneDot,
+                    { backgroundColor: reached ? lv.color : COLORS.border },
+                  ]}>
+                    <Text style={{ fontSize: 10 }}>{reached ? lv.icon : '🔒'}</Text>
+                  </View>
+                  {i < AQUARIST_LEVELS.length - 1 && (
+                    <View style={[
+                      styles.milestoneLine,
+                      { backgroundColor: reached ? lv.color + '55' : COLORS.border },
+                    ]} />
+                  )}
+                </View>
+              );
+            })}
+          </View>
+        </RAnimated.View>
+
+        {/* Progress card */}
+        <RAnimated.View
+          entering={FadeInDown.delay(100).duration(500).springify().damping(16)}
           style={styles.progressCard}
         >
           <View style={styles.progressTop}>
@@ -211,6 +295,82 @@ const styles = StyleSheet.create({
   closeBtn: { padding: 4 },
   headerTitle: { fontSize: 20, fontWeight: 'bold', color: COLORS.text, fontFamily: FONTS.sansEb },
 
+  // Level card
+  levelCard: {
+    backgroundColor: COLORS.backgroundCard,
+    borderRadius: BORDER_RADIUS.lg,
+    marginHorizontal: SPACING.lg,
+    marginBottom: SPACING.md,
+    borderWidth: 1,
+    overflow: 'hidden',
+  },
+  levelGradient: { padding: SPACING.lg },
+  levelTop: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 12,
+  },
+  levelIconWrap: {
+    width: 52, height: 52, borderRadius: 26,
+    alignItems: 'center', justifyContent: 'center',
+  },
+  levelIcon: { fontSize: 28 },
+  levelInfo: { flex: 1 },
+  levelLabel: { fontSize: 11, color: COLORS.textMuted, fontFamily: FONTS.sans },
+  levelName: { fontSize: 22, fontWeight: 'bold', fontFamily: FONTS.sansEb },
+  levelBadge: {
+    width: 50, height: 50, borderRadius: 25,
+    alignItems: 'center', justifyContent: 'center',
+  },
+  levelBadgeText: { fontSize: 18, fontWeight: 'bold', fontFamily: FONTS.sansEb },
+  levelBadgeSub: { fontSize: 8, fontFamily: FONTS.sans, marginTop: -2 },
+
+  levelProgressSection: { marginTop: SPACING.md },
+  levelProgressHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: 6,
+  },
+  levelProgressLabel: { fontSize: 12, color: COLORS.textSecondary, fontFamily: FONTS.sans },
+  levelProgressCount: { fontSize: 12, fontWeight: '700', fontFamily: FONTS.sansBd },
+  levelBarBg: {
+    height: 8,
+    backgroundColor: COLORS.background,
+    borderRadius: 4,
+    overflow: 'hidden',
+  },
+
+  maxLevelBanner: {
+    marginTop: SPACING.md,
+    backgroundColor: '#ffd700' + '15',
+    borderRadius: BORDER_RADIUS.sm,
+    padding: SPACING.xs,
+  },
+  maxLevelText: { fontSize: 12, color: '#ffd700', fontWeight: '700', textAlign: 'center', fontFamily: FONTS.sansBd },
+
+  milestonesRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingHorizontal: SPACING.lg,
+    paddingBottom: SPACING.md,
+    paddingTop: SPACING.xs,
+  },
+  milestoneItem: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    flex: 1,
+  },
+  milestoneDot: {
+    width: 24, height: 24, borderRadius: 12,
+    alignItems: 'center', justifyContent: 'center',
+  },
+  milestoneLine: {
+    flex: 1, height: 2, marginHorizontal: 2,
+  },
+
+  // Progress card
   progressCard: {
     backgroundColor: COLORS.backgroundCard,
     borderRadius: BORDER_RADIUS.lg,
