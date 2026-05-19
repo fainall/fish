@@ -18,7 +18,7 @@ import { getStyleInfo, styleFitScore } from '../../data/aquariumStyles';
 import Aquarium3D from '../../components/aquarium/Aquarium3D';
 import { confirmAction } from '../../utils/confirm';
 import { useFishHistory, REMOVAL_REASON_LABELS, RemovalReason } from '../../hooks/useFishHistory';
-import { calculateStock } from '../../utils/stocking';
+import { calculateStock, getEffectiveVolume } from '../../utils/stocking';
 
 // Calcula o estima dimensiones del tanque a partir del volumen (ratio típico 2.5:1:0.75)
 function getDims(aq: AquariumEntry) {
@@ -527,9 +527,10 @@ export default function AquariumScreen({ navigation }: any) {
         const styleInfo = getStyleInfo(selectedAquarium.aquarium_style);
         const styleLabel = styleInfo?.label ?? selectedAquarium.aquarium_style;
         const msg = `${fishData.common_name} no es compatible con el estilo "${styleLabel}":\n\n${conflicts.map(c => `• ${c}`).join('\n')}\n\n¿Añadir de todas formas?`;
+        const effVol = getEffectiveVolume(selectedAquarium.volume_liters, selectedAquarium.displacement);
         webConfirm('⚠️ Parámetros incompatibles', msg, () => {
-          if (fishData.min_tank_liters > selectedAquarium.volume_liters) {
-            webConfirm('Tanque pequeño', `${fishData.common_name} necesita ≥${fishData.min_tank_liters}L. ¿Añadir igual?`, () => doAdd(fishId, qty), 'Añadir igual');
+          if (fishData.min_tank_liters > effVol) {
+            webConfirm('Tanque pequeño', `${fishData.common_name} necesita ≥${fishData.min_tank_liters}L (tu acuario tiene ~${Math.round(effVol)}L efectivos). ¿Añadir igual?`, () => doAdd(fishId, qty), 'Añadir igual');
           } else {
             doAdd(fishId, qty);
           }
@@ -538,9 +539,10 @@ export default function AquariumScreen({ navigation }: any) {
       }
     }
 
-    // 3. Litros — advertencia
-    if (fishData.min_tank_liters > selectedAquarium.volume_liters) {
-      webConfirm('Tanque pequeño', `${fishData.common_name} necesita ≥${fishData.min_tank_liters}L. ¿Añadir igual?`, () => doAdd(fishId, qty), 'Añadir igual');
+    // 3. Litros — advertencia (usa volumen efectivo)
+    const effVol = getEffectiveVolume(selectedAquarium.volume_liters, selectedAquarium.displacement);
+    if (fishData.min_tank_liters > effVol) {
+      webConfirm('Tanque pequeño', `${fishData.common_name} necesita ≥${fishData.min_tank_liters}L (tu acuario tiene ~${Math.round(effVol)}L efectivos). ¿Añadir igual?`, () => doAdd(fishId, qty), 'Añadir igual');
       return;
     }
 
@@ -656,8 +658,8 @@ export default function AquariumScreen({ navigation }: any) {
                   {/* Stats row */}
                   <View style={styles.aquaStatsRow}>
                     <View style={styles.aquaStat}>
-                      <Text style={styles.aquaStatValue}>{selectedAquarium.volume_liters} L</Text>
-                      <Text style={styles.aquaStatLabel}>Volumen</Text>
+                      <Text style={styles.aquaStatValue}>{Math.round(getEffectiveVolume(selectedAquarium.volume_liters, selectedAquarium.displacement))} L</Text>
+                      <Text style={styles.aquaStatLabel}>Vol. efectivo</Text>
                     </View>
                     <View style={styles.aquaStatDivider} />
                     <View style={styles.aquaStat}>
@@ -1039,7 +1041,7 @@ export default function AquariumScreen({ navigation }: any) {
                 const qty         = pendingQty[fish.id] ?? 0;
                 const alreadyIn   = selectedAquarium?.fish.find(f => f.fishId === fish.id);
                 const waterOk     = fish.water_type === selectedAquarium?.water_type;
-                const tankOk      = fish.min_tank_liters <= (selectedAquarium?.volume_liters ?? 0);
+                const tankOk      = fish.min_tank_liters <= getEffectiveVolume(selectedAquarium?.volume_liters ?? 0, selectedAquarium?.displacement);
                 const totalQty    = qty + (alreadyIn?.qty ?? 0);
                 const schoolingOk = !fish.is_schooling || totalQty >= (fish.schooling_min ?? 6);
                 const fitScore    = getFitScore(fish, selectedAquarium?.aquarium_style);

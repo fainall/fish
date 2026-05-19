@@ -34,6 +34,7 @@ function rowToEntry(row: any): AquariumEntry {
     water_type:     row.water_type,
     aquarium_style: row.aquarium_style,
     description:    row.description,
+    displacement:   row.displacement ?? undefined,
     created_at:     row.created_at,
     fish: (row.aquarium_fish ?? []).map((af: any) => ({
       fishId: af.fish_id,

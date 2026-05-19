@@ -272,6 +272,15 @@ export function calcDisplacedLiters(volumeLiters: number, displacement?: TankDis
 }
 
 /**
+ * Volumen efectivo del tanque descontando desplazamiento.
+ * Usar en toda validación de litros mínimos, flora, wishlist, etc.
+ */
+export function getEffectiveVolume(volumeLiters: number, displacement?: TankDisplacement): number {
+  const displaced = calcDisplacedLiters(volumeLiters, displacement);
+  return Math.max(Math.round((volumeLiters - displaced) * 10) / 10, volumeLiters * 0.3);
+}
+
+/**
  * Estima la capacidad del tanque en unidades de bioload.
  * Base: ~1 unidad de bioload por 2 litros de agua efectiva.
  */
@@ -309,6 +318,7 @@ function generateAlerts(
   fishList: FishEntry[],
   volumeLiters: number,
   stockPercent: number,
+  displacement?: TankDisplacement,
 ): StockAlert[] {
   const alerts: StockAlert[] = [];
 
@@ -329,14 +339,15 @@ function generateAlerts(
     });
   }
 
-  // Peces que necesitan tanque más grande
+  // Peces que necesitan tanque más grande (comparar contra volumen efectivo)
+  const effVol = getEffectiveVolume(volumeLiters, displacement);
   for (const { fishData, qty } of fishList) {
-    if (fishData.min_tank_liters > volumeLiters) {
+    if (fishData.min_tank_liters > effVol) {
       alerts.push({
         type: 'critical',
         icon: '📏',
         title: `${fishData.common_name}: tanque insuficiente`,
-        body: `Necesita mínimo ${fishData.min_tank_liters}L, tu tanque tiene ${volumeLiters}L.`,
+        body: `Necesita mínimo ${fishData.min_tank_liters}L, tu acuario tiene ~${Math.round(effVol)}L efectivos.`,
       });
     }
   }
@@ -463,7 +474,7 @@ export function calculateStock(
     stockPercent > 50  ? 'Moderado' :
     stockPercent > 0   ? 'Espacio disponible' : 'Sin peces';
 
-  const alerts = generateAlerts(fishList, volumeLiters, stockPercent);
+  const alerts = generateAlerts(fishList, volumeLiters, stockPercent, displacement);
   const columnDistribution = calcColumnDistribution(fishList);
 
   return {

@@ -16,6 +16,7 @@ import { useFishDatabase } from '../../hooks/useFishDatabase';
 import { useParameterRecords } from '../../hooks/useParameterRecords';
 import { getDailyTip } from '../../constants/tips';
 import { getStyleInfo } from '../../data/aquariumStyles';
+import { getEffectiveVolume } from '../../utils/stocking';
 import { FishImage } from '../../components/FishImage';
 import {
   FishAlert, getParameterAlerts, getSchoolingAlerts,
@@ -217,7 +218,7 @@ export default function HomeScreen({ navigation }: any) {
               <View style={styles.bannerTag}>
                 <Ionicons name="cube-outline" size={11} color="rgba(255,255,255,0.9)" />
                 <Text style={styles.bannerTagText}>
-                  {selectedAquarium ? `${selectedAquarium.volume_liters}L · ${styleInfo?.label ?? 'Mi acuario'}` : 'Acuario Virtual'}
+                  {selectedAquarium ? `${Math.round(getEffectiveVolume(selectedAquarium.volume_liters, selectedAquarium.displacement))}L · ${styleInfo?.label ?? 'Mi acuario'}` : 'Acuario Virtual'}
                 </Text>
               </View>
               <Text style={[styles.bannerTitle, { fontSize: fs(26), lineHeight: fs(32) }]}>Gestiona tu{'\n'}ecosistema</Text>
@@ -245,7 +246,7 @@ export default function HomeScreen({ navigation }: any) {
               </View>
               <View style={styles.aquaCardBadge}>
                 <Text style={styles.aquaCardBadgeText}>
-                  {selectedAquarium ? `${selectedAquarium.volume_liters}L` : '—'}
+                  {selectedAquarium ? `${Math.round(getEffectiveVolume(selectedAquarium.volume_liters, selectedAquarium.displacement))}L` : '—'}
                 </Text>
               </View>
             </View>

@@ -16,6 +16,7 @@ import { Ionicons } from '@expo/vector-icons';
 import { COLORS, FONTS, SPACING, BORDER_RADIUS } from '../../constants/theme';
 import { useResponsive } from '../../hooks/useResponsive';
 import { useAquariums } from '../../hooks/useAquariums';
+import { getEffectiveVolume } from '../../utils/stocking';
 
 type Tab = 'salt' | 'water' | 'dechlor';
 
@@ -27,7 +28,9 @@ function num(v: string, fallback = 0): number {
 export default function CalculatorScreen({ navigation }: any) {
   const { s, fs } = useResponsive();
   const { selectedAquarium } = useAquariums();
-  const defaultLiters = selectedAquarium?.volume_liters ?? 100;
+  const defaultLiters = selectedAquarium
+    ? Math.round(getEffectiveVolume(selectedAquarium.volume_liters, selectedAquarium.displacement))
+    : 100;
   const isSaltwater = selectedAquarium?.water_type === 'saltwater' || selectedAquarium?.water_type === 'brackish';
 
   const TABS: { id: Tab; label: string; icon: string }[] = [

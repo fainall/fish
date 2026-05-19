@@ -6,6 +6,7 @@ import {
 import { Ionicons } from '@expo/vector-icons';
 import { COLORS, FONTS, SPACING, BORDER_RADIUS } from '../../constants/theme';
 import { useAquariums } from '../../hooks/useAquariums';
+import { getEffectiveVolume } from '../../utils/stocking';
 import {
   PLANT_DATABASE, AquaticPlant,
   DIFFICULTY_LABELS, DIFFICULTY_COLORS,
@@ -261,7 +262,7 @@ export default function FloraScreen({ embedded }: { embedded?: boolean } = {}) {
   const [expandedId, setExpandedId] = useState<string | null>(null);
 
   const aquarium = aquariums.find(a => a.id === aquariumId) ?? aquariums[0];
-  const vol = aquarium?.volume_liters ?? 100;
+  const vol = aquarium ? getEffectiveVolume(aquarium.volume_liters, aquarium.displacement) : 100;
   const tech = TECH_CONFIG[techLevel];
 
   // ── Marine / saltwater guard ───────────────────────────────────────────────

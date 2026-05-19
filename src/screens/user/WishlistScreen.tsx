@@ -18,6 +18,7 @@ import { useWishlist } from '../../hooks/useWishlist';
 import { useFishHistory, REMOVAL_REASON_LABELS, RemovalReason } from '../../hooks/useFishHistory';
 import { confirmAction } from '../../utils/confirm';
 import { Fish } from '../../types';
+import { getEffectiveVolume } from '../../utils/stocking';
 
 type Tab = 'wishlist' | 'history';
 
@@ -87,7 +88,9 @@ export default function WishlistScreen({ navigation }: any) {
     });
   }, [selectedAquarium, db]);
 
-  const tankLiters = selectedAquarium?.volume_liters;
+  const tankLiters = selectedAquarium
+    ? getEffectiveVolume(selectedAquarium.volume_liters, selectedAquarium.displacement)
+    : undefined;
 
   // Hydrate wishlist items with full Fish data + compatibility score
   const enrichedWishlist = useMemo(() => {
