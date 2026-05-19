@@ -44,7 +44,6 @@
       "expo-splash-screen",
       "expo-web-browser",
       "expo-image-picker",
-      "expo-image-manipulator",
       [
         "expo-notifications",
         {
