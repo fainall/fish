@@ -1,7 +1,7 @@
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useCallback } from 'react';
 import {
   View, Text, ScrollView, TouchableOpacity, StyleSheet,
-  Modal, TextInput, Alert,
+  Modal, TextInput, Alert, RefreshControl,
 } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import { Ionicons } from '@expo/vector-icons';
@@ -114,6 +114,12 @@ export default function TasksScreen() {
   const [showModal,     setShowModal]     = useState(false);
   const [showCompleted, setShowCompleted] = useState(false);
   const [editingTask,   setEditingTask]   = useState<AquariumTask | null>(null);
+  const [refreshing,    setRefreshing]    = useState(false);
+
+  const onRefresh = useCallback(() => {
+    setRefreshing(true);
+    setTimeout(() => setRefreshing(false), 1000);
+  }, []);
 
   const [formTitle,      setFormTitle]      = useState('');
   const [formDesc,       setFormDesc]       = useState('');
@@ -213,7 +219,12 @@ export default function TasksScreen() {
 
   return (
     <LinearGradient colors={['#EBF4FA', '#F3F9FD']} style={styles.container}>
-      <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={{ paddingBottom: SPACING.xxl }}>
+      <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={{ paddingBottom: SPACING.xxl }}
+        refreshControl={
+          <RefreshControl refreshing={refreshing} onRefresh={onRefresh}
+            tintColor={COLORS.primary} colors={[COLORS.primary]} />
+        }
+      >
 
         {/* ── Header ── */}
         <View style={styles.header}>

@@ -1,7 +1,7 @@
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useCallback } from 'react';
 import {
   View, Text, ScrollView, TouchableOpacity, StyleSheet,
-  TextInput, Modal, Alert, Dimensions,
+  TextInput, Modal, Alert, Dimensions, RefreshControl,
 } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import { Ionicons } from '@expo/vector-icons';
@@ -196,6 +196,12 @@ export default function ParametersScreen() {
   const [chartParam, setChartParam]   = useState<ParameterDef | null>(null);
   const [form, setForm]               = useState<Partial<ParameterRecord>>({});
   const [notes, setNotes]             = useState('');
+  const [refreshing, setRefreshing]   = useState(false);
+
+  const onRefresh = useCallback(() => {
+    setRefreshing(true);
+    setTimeout(() => setRefreshing(false), 1000);
+  }, []);
 
   const latestRecord = records[records.length - 1];
 
@@ -257,6 +263,21 @@ export default function ParametersScreen() {
     setForm({});
     setNotes('');
     setShowModal(false);
+
+    // Success feedback
+    const outOfRange = PARAMETERS.filter(p => {
+      const val = form[p.key] as number | undefined;
+      if (val === undefined) return false;
+      return getStatus(val, p.idealMin, p.idealMax).severity !== 'ok';
+    });
+    if (outOfRange.length > 0) {
+      Alert.alert(
+        '⚠️ Registro guardado',
+        `${outOfRange.length} parámetro${outOfRange.length > 1 ? 's' : ''} fuera del rango ideal. Revisa las alertas.`,
+      );
+    } else {
+      Alert.alert('✅ Registro guardado', 'Todos los parámetros están en rango ideal.');
+    }
   };
 
   const setParam = (key: string, value: string) => {
@@ -275,7 +296,12 @@ export default function ParametersScreen() {
 
   return (
     <LinearGradient colors={['#EDF6FB', '#F4FAFD']} style={styles.container}>
-      <ScrollView showsVerticalScrollIndicator={false}>
+      <ScrollView showsVerticalScrollIndicator={false}
+        refreshControl={
+          <RefreshControl refreshing={refreshing} onRefresh={onRefresh}
+            tintColor={COLORS.primary} colors={[COLORS.primary]} />
+        }
+      >
 
         {/* ── Header ── */}
         <View style={styles.header}>

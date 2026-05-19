@@ -1,6 +1,6 @@
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useCallback } from 'react';
 import {
-  View, Text, ScrollView, TouchableOpacity, StyleSheet, Modal, Image,
+  View, Text, ScrollView, TouchableOpacity, StyleSheet, Modal, Image, RefreshControl,
 } from 'react-native';
 import RAnimated, { FadeInDown, FadeInRight, FadeInUp, Layout } from 'react-native-reanimated';
 import { LinearGradient } from 'expo-linear-gradient';
@@ -27,6 +27,7 @@ import {
   useStaggerStyle,
   useScalePress,
 } from '../../utils/animations';
+import { HomeSkeleton } from '../../components/SkeletonLoader';
 import AchievementsScreen from './AchievementsScreen';
 import ProfileScreen from './ProfileScreen';
 
@@ -70,11 +71,12 @@ export default function HomeScreen({ navigation }: any) {
   const { s, fs, wp, isTablet }     = useResponsive();
   const { user }                    = useAuth();
   const { profile }                 = useUserProfile();
-  const { aquariums, selectedAquarium } = useAquariums();
+  const { aquariums, selectedAquarium, loading: aqLoading } = useAquariums();
   const { pendingTasks, overdueCount }  = useTasks();
   const { unlocked }                = useAchievements();
-  const { fish: allFish }           = useFishDatabase();
+  const { fish: allFish, loading: fishLoading } = useFishDatabase();
   const { recordsFor }              = useParameterRecords();
+  const [refreshing, setRefreshing] = useState(false);
   const dailyTip                    = getDailyTip(profile.experience);
   const expInfo                     = EXP_LABELS[profile.experience];
   const activeStyle                 = selectedAquarium?.aquarium_style ?? profile.aquarium?.aquarium_style;
@@ -123,9 +125,26 @@ export default function HomeScreen({ navigation }: any) {
     .map(u => ACHIEVEMENTS.find(a => a.id === u.id)!)
     .filter(Boolean);
 
+  const isLoading = aqLoading || fishLoading;
+
+  const onRefresh = useCallback(() => {
+    setRefreshing(true);
+    setTimeout(() => setRefreshing(false), 1200);
+  }, []);
+
   const firstName = profile.display_name?.split(' ')[0] || user?.full_name?.split(' ')[0] || 'Acuarista';
   const initials  = (profile.display_name || user?.full_name || 'A')
     .split(/\s+/).filter(Boolean).map((w: string) => w[0]).slice(0, 2).join('').toUpperCase();
+
+  if (isLoading) {
+    return (
+      <View style={styles.container}>
+        <ScrollView showsVerticalScrollIndicator={false}>
+          <HomeSkeleton />
+        </ScrollView>
+      </View>
+    );
+  }
 
   return (
     <View style={styles.container}>
@@ -135,6 +154,10 @@ export default function HomeScreen({ navigation }: any) {
         contentContainerStyle={{ paddingBottom: SPACING.xxl }}
         onScroll={scrollHandler}
         scrollEventThrottle={16}
+        refreshControl={
+          <RefreshControl refreshing={refreshing} onRefresh={onRefresh}
+            tintColor={COLORS.primary} colors={[COLORS.primary]} />
+        }
       >
 
         {/* ── Header ── */}

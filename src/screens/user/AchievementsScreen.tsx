@@ -10,6 +10,7 @@ import {
   useAchievements,
   ACHIEVEMENTS,
   RARITY_COLORS,
+  AchievementProgress,
 } from '../../hooks/useAchievements';
 import { useAnimatedWidth } from '../../utils/animations';
 
@@ -25,7 +26,7 @@ const RARITY_ORDER = ['bronze', 'silver', 'gold', 'platinum'] as const;
 interface Props { onClose: () => void; }
 
 export default function AchievementsScreen({ onClose }: Props) {
-  const { unlocked, unlockedIds } = useAchievements();
+  const { unlocked, unlockedIds, progress } = useAchievements();
 
   const unlockedCount  = unlocked.length;
   const totalCount     = ACHIEVEMENTS.length;
@@ -166,6 +167,22 @@ export default function AchievementsScreen({ onClose }: Props) {
                           })}
                         </Text>
                       )}
+                      {!isUnlocked && progress[achievement.id] && progress[achievement.id].target > 1 && (
+                        <View style={styles.achProgressRow}>
+                          <View style={styles.achProgressBg}>
+                            <View style={[
+                              styles.achProgressFill,
+                              {
+                                width: `${Math.round((progress[achievement.id].current / progress[achievement.id].target) * 100)}%`,
+                                backgroundColor: rarityColor,
+                              },
+                            ]} />
+                          </View>
+                          <Text style={[styles.achProgressText, { color: rarityColor }]}>
+                            {progress[achievement.id].current}/{progress[achievement.id].target}
+                          </Text>
+                        </View>
+                      )}
                     </View>
                   </RAnimated.View>
                 );
@@ -271,4 +288,15 @@ const styles = StyleSheet.create({
   cardDesc: { fontSize: 12, color: COLORS.textSecondary, lineHeight: 17, fontFamily: FONTS.sans },
   cardDescLocked: { color: COLORS.textMuted, fontStyle: 'italic' },
   cardDate: { fontSize: 10, color: COLORS.textMuted, marginTop: 4, fontFamily: FONTS.sans },
+
+  // Achievement progress bar
+  achProgressRow: {
+    flexDirection: 'row', alignItems: 'center', gap: 8, marginTop: 6,
+  },
+  achProgressBg: {
+    flex: 1, height: 6, backgroundColor: COLORS.background,
+    borderRadius: 3, overflow: 'hidden',
+  },
+  achProgressFill: { height: '100%', borderRadius: 3, minWidth: 2 },
+  achProgressText: { fontSize: 10, fontWeight: '700', fontFamily: FONTS.sansBd },
 });

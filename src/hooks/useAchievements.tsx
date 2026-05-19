@@ -1,5 +1,5 @@
 import React, {
-  createContext, useContext, useEffect, useState, useCallback, useRef,
+  createContext, useContext, useEffect, useState, useCallback, useRef, useMemo,
 } from 'react';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { supabase, IS_DEMO_MODE } from '../services/supabase';
@@ -92,10 +92,58 @@ function checks(
   };
 }
 
+// ── Progress computation ─────────────────────────────────────────────────────
+export interface AchievementProgress { current: number; target: number; }
+
+function computeProgress(
+  aquariums: AquariumEntry[], records: ParameterRecord[],
+  tasks: AquariumTask[], fishDb: Fish[], breedingGoals: BreedingGoal[],
+  unlockedIds: Set<AchievementId>,
+): Record<AchievementId, AchievementProgress> {
+  // perfect_10: best consecutive in-range streak out of 10
+  let bestStreak = 0;
+  for (const aq of aquariums) {
+    const recs = records.filter(r => r.aquarium_id === aq.id)
+      .sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime());
+    const si = getStyleInfo(aq.aquarium_style);
+    const p = si?.params;
+    const ranges: Record<string, [number, number]> = {
+      temperature: [p?.temp_min ?? 22, p?.temp_max ?? 28],
+      ph: [p?.ph_min ?? 6.0, p?.ph_max ?? 7.8],
+      ammonia: [0, 0.25], nitrite: [0, 0.5], nitrate: [0, 40],
+    };
+    let streak = 0;
+    for (const r of recs.slice(-10)) {
+      const ok = Object.entries(ranges).every(([k, [mn, mx]]) => {
+        const v = (r as any)[k];
+        return v === undefined || (v >= mn && v <= mx);
+      });
+      streak = ok ? streak + 1 : 0;
+      if (streak > bestStreak) bestStreak = streak;
+    }
+  }
+
+  const nonMasterUnlocked = NON_MASTER_IDS.filter(id => unlockedIds.has(id)).length;
+
+  return {
+    first_parameter:    { current: Math.min(records.length, 1), target: 1 },
+    first_fish:         { current: aquariums.some(a => a.fish.length > 0) ? 1 : 0, target: 1 },
+    water_change_done:  { current: tasks.filter(t => t.type === 'water_change' && t.completed).length > 0 ? 1 : 0, target: 1 },
+    first_breeding:     { current: breedingGoals.filter(g => g.status === 'success').length > 0 ? 1 : 0, target: 1 },
+    perfect_10:         { current: Math.min(bestStreak, 10), target: 10 },
+    schooling_complete: { current: aquariums.some(a => a.fish.some(e => { const f = fishDb.find(f2 => f2.id === e.fishId); return f?.is_schooling && e.qty >= (f.schooling_min ?? 6); })) ? 1 : 0, target: 1 },
+    biotope_authentic:  { current: aquariums.some(a => { const sp = a.fish.map(e => fishDb.find(f => f.id === e.fishId)).filter(Boolean) as Fish[]; return sp.length >= 2 && new Set(sp.map(f => extractRegion(f.origin))).size === 1; }) ? 1 : 0, target: 1 },
+    multi_aquarist:     { current: Math.min(aquariums.length, 2), target: 2 },
+    analyst:            { current: Math.min(records.length, 20), target: 20 },
+    master:             { current: nonMasterUnlocked, target: NON_MASTER_IDS.length },
+  };
+}
+
 // ── Context ───────────────────────────────────────────────────────────────────
 interface AchievementsContextType {
   unlocked:    AchievementUnlock[];
   unlockedIds: Set<AchievementId>;
+  progress:    Record<AchievementId, AchievementProgress>;
   newBadge:    Achievement | null;
   dismissBadge:() => void;
   unlock:      (id: AchievementId) => Promise<void>;
@@ -199,9 +247,15 @@ export function AchievementsProvider({ children }: { children: React.ReactNode }
     if (achievement) setNewBadge(achievement);
   }, [aquariums, records, tasks, fishDb, breedingGoals, user, unlocked, persistUnlock]);
 
+  const unlockedIds = useMemo(() => new Set(unlocked.map(u => u.id)), [unlocked]);
+  const progress = useMemo(
+    () => computeProgress(aquariums, records, tasks, fishDb, breedingGoals, unlockedIds),
+    [aquariums, records, tasks, fishDb, breedingGoals, unlockedIds],
+  );
+
   return (
     <AchievementsContext.Provider value={{
-      unlocked, unlockedIds: new Set(unlocked.map(u => u.id)),
+      unlocked, unlockedIds, progress,
       newBadge, dismissBadge: () => setNewBadge(null), unlock,
     }}>
       {children}
