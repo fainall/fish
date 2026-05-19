@@ -1,5 +1,6 @@
 import React from 'react';
-import { View, Text, ScrollView, StyleSheet, TouchableOpacity, Platform, Image } from 'react-native';
+import { View, Text, ScrollView, StyleSheet, TouchableOpacity, Platform } from 'react-native';
+import { captureError } from '../services/sentry';
 
 interface State {
   err: Error | null;
@@ -19,8 +20,7 @@ export default class ErrorBoundary extends React.Component<
   componentDidCatch(err: Error, info: any) {
     console.warn('[ErrorBoundary]', err.name, err.message);
     this.setState({ info });
-    // TODO: send to Sentry when integrated
-    // Sentry.captureException(err, { extra: { componentStack: info?.componentStack } });
+    captureError(err, { componentStack: info?.componentStack });
   }
 
   private renderDev() {

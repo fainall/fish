@@ -2,7 +2,11 @@ import 'react-native-gesture-handler';
 import React, { useEffect } from 'react';
 import { View, ActivityIndicator } from 'react-native';
 import * as Updates from 'expo-updates';
+import { initSentry } from './src/services/sentry';
 import ErrorBoundary from './src/components/ErrorBoundary';
+
+// Initialize Sentry before anything else renders
+initSentry();
 import SplashScreen from './src/screens/SplashScreen';
 import { NavigationContainer } from '@react-navigation/native';
 import { StatusBar } from 'expo-status-bar';

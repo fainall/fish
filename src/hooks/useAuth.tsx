@@ -1,6 +1,7 @@
 import React, { createContext, useContext, useEffect, useState } from 'react';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { supabase, IS_DEMO_MODE } from '../services/supabase';
+import { identifyUser, clearUser as sentryClearUser } from '../services/sentry';
 import { User } from '../types';
 
 const SESSION_KEY     = '@aquamanager_session';
@@ -40,8 +41,15 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [user, setUser]       = useState<User | null>(null);
   const [loading, setLoading] = useState(true);
 
-  const persist = async (u: User) => AsyncStorage.setItem(SESSION_KEY, JSON.stringify(u));
-  const clear   = async () => { await AsyncStorage.removeItem(SESSION_KEY); setUser(null); };
+  const persist = async (u: User) => {
+    await AsyncStorage.setItem(SESSION_KEY, JSON.stringify(u));
+    identifyUser(u.id, u.email);
+  };
+  const clear = async () => {
+    await AsyncStorage.removeItem(SESSION_KEY);
+    setUser(null);
+    sentryClearUser();
+  };
 
   // ── Init ────────────────────────────────────────────────────────────────────
   useEffect(() => {
