@@ -4,6 +4,7 @@
     "slug": "aquamanager",
     "scheme": "aquaria",
     "version": "1.0.0",
+    "description": "Gestiona tus acuarios, monitorea parametros del agua, lleva un registro de tus peces y conecta con la comunidad acuarista. Todo en una sola app.",
     "orientation": "portrait",
     "icon": "./assets/icon.png",
     "userInterfaceStyle": "dark",
@@ -11,6 +12,7 @@
     "splash": {
       "backgroundColor": "#000516"
     },
+    "privacyUrl": "https://fainall.github.io/fish/aquamanager/privacy-policy.html",
     "ios": {
       "supportsTablet": true,
       "bundleIdentifier": "com.aquaria.app",
