@@ -10,7 +10,7 @@
  *
  * Referencia: AqAdvisor, Aqulator, Aquarium Science, ThinkFish
  */
-import { Fish, WaterLevel, AquariumStyle } from '../types';
+import { Fish, WaterLevel, AquariumStyle, TankDisplacement } from '../types';
 
 // ── Tipos ────────────────────────────────────────────────────────────────────
 
@@ -39,6 +39,10 @@ export interface StockResult {
   totalBioload: number;
   /** Capacidad estimada del tanque en unidades de bioload */
   tankCapacity: number;
+  /** Litros reales de agua después de restar desplazamiento */
+  effectiveVolume: number;
+  /** Litros desplazados por sustrato, rocas, troncos, etc. */
+  displacedLiters: number;
 }
 
 export interface FishBioload {
@@ -237,16 +241,45 @@ export function calcFishBioload(fish: Fish): number {
 
 // ── Capacidad del tanque ─────────────────────────────────────────────────────
 
+// ── Factores de desplazamiento (litros por kg / unidad) ─────────────────────
+
+const DISPLACEMENT_FACTORS = {
+  substrate_kg:      0.6,   // grava, arena, aquasoil → ~0.6L por kg
+  rocks_kg:          0.38,  // roca, lava rock → ~0.38L por kg
+  wood_kg:           0.8,   // troncos, raíces → ~0.8L por kg
+  plants_kg:         0.5,   // biomasa vegetal (raíces+masa) → ~0.5L por kg
+  equipment_liters:  1.0,   // litros directos (filtro interno, calentador, etc.)
+} as const;
+
+/**
+ * Calcula litros desplazados por elementos del tanque.
+ * Si no hay datos → 15% del volumen como estimación conservadora.
+ */
+export function calcDisplacedLiters(volumeLiters: number, displacement?: TankDisplacement): number {
+  if (!displacement) return volumeLiters * 0.15;
+  const hasAny = Object.values(displacement).some(v => v != null && v > 0);
+  if (!hasAny) return volumeLiters * 0.15;
+
+  let displaced = 0;
+  if (displacement.substrate_kg)     displaced += displacement.substrate_kg     * DISPLACEMENT_FACTORS.substrate_kg;
+  if (displacement.rocks_kg)         displaced += displacement.rocks_kg         * DISPLACEMENT_FACTORS.rocks_kg;
+  if (displacement.wood_kg)          displaced += displacement.wood_kg          * DISPLACEMENT_FACTORS.wood_kg;
+  if (displacement.plants_kg)        displaced += displacement.plants_kg        * DISPLACEMENT_FACTORS.plants_kg;
+  if (displacement.equipment_liters) displaced += displacement.equipment_liters * DISPLACEMENT_FACTORS.equipment_liters;
+
+  // Nunca desplazar más del 60% del tanque (sanity check)
+  return Math.min(displaced, volumeLiters * 0.6);
+}
+
 /**
  * Estima la capacidad del tanque en unidades de bioload.
  * Base: ~1 unidad de bioload por 2 litros de agua efectiva.
- * Ajustable con filtración y plantado (futuro).
  */
-export function calcTankCapacity(volumeLiters: number): number {
-  // Volumen efectivo (15% desplazado por sustrato, decoración, equipo)
-  const effectiveVolume = volumeLiters * 0.85;
-  // Factor base: cada 2L efectivos soportan ~1 unidad de bioload
-  return effectiveVolume / 2;
+export function calcTankCapacity(volumeLiters: number, displacement?: TankDisplacement): { capacity: number; effectiveVolume: number; displacedLiters: number } {
+  const displacedLiters = calcDisplacedLiters(volumeLiters, displacement);
+  const effectiveVolume = Math.max(volumeLiters - displacedLiters, volumeLiters * 0.3);
+  const capacity = effectiveVolume / 2;
+  return { capacity, effectiveVolume: Math.round(effectiveVolume * 10) / 10, displacedLiters: Math.round(displacedLiters * 10) / 10 };
 }
 
 // ── Distribución por columna de agua ─────────────────────────────────────────
@@ -372,7 +405,10 @@ function generateAlerts(
 export function calculateStock(
   fishList: FishEntry[],
   volumeLiters: number,
+  displacement?: TankDisplacement,
 ): StockResult {
+  const tank = calcTankCapacity(volumeLiters, displacement);
+
   if (fishList.length === 0 || volumeLiters <= 0) {
     return {
       stockPercent: 0,
@@ -382,11 +418,13 @@ export function calculateStock(
       alerts: [],
       columnDistribution: { top: 0, middle: 0, bottom: 0 },
       totalBioload: 0,
-      tankCapacity: calcTankCapacity(volumeLiters),
+      tankCapacity: tank.capacity,
+      effectiveVolume: tank.effectiveVolume,
+      displacedLiters: tank.displacedLiters,
     };
   }
 
-  const tankCapacity = calcTankCapacity(volumeLiters);
+  const tankCapacity = tank.capacity;
   let totalBioload   = 0;
 
   const fishBreakdown: FishBioload[] = fishList.map(({ fishData, qty }) => {
@@ -437,5 +475,7 @@ export function calculateStock(
     columnDistribution,
     totalBioload: Math.round(totalBioload * 10) / 10,
     tankCapacity: Math.round(tankCapacity * 10) / 10,
+    effectiveVolume: tank.effectiveVolume,
+    displacedLiters: tank.displacedLiters,
   };
 }

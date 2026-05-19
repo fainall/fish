@@ -137,22 +137,98 @@ function FishCard({ fishData, qty, onChangeQty, onRemove, aquariumStyle }: {
 }
 
 // ── Stock calculator (bioload-based) ─────────────────────────────────────────
-function StockCalc({ volumeLiters, fishList }: { volumeLiters: number; fishList: { fishData: Fish; qty: number }[] }) {
-  const result = calculateStock(fishList, volumeLiters);
-  const { stockPercent, severity, label, fishBreakdown, alerts, columnDistribution, totalBioload, tankCapacity } = result;
+function StockCalc({ volumeLiters, fishList, displacement, onDisplacementChange }: {
+  volumeLiters: number;
+  fishList: { fishData: Fish; qty: number }[];
+  displacement?: import('../../types').TankDisplacement;
+  onDisplacementChange?: (d: import('../../types').TankDisplacement) => void;
+}) {
+  const [showDisplacement, setShowDisplacement] = useState(false);
+  const result = calculateStock(fishList, volumeLiters, displacement);
+  const { stockPercent, severity, label, fishBreakdown, alerts, columnDistribution, totalBioload, tankCapacity, effectiveVolume, displacedLiters } = result;
 
   const color = severity === 'ok' ? COLORS.success : severity === 'caution' ? COLORS.warning : COLORS.error;
   const barWidth = Math.min(stockPercent, 100);
 
-  // Pez que más contribuye al bioload
   const topContributor = fishBreakdown[0];
+
+  const hasDisplacement = displacement && Object.values(displacement).some(v => v != null && v > 0);
+
+  const updateField = (field: keyof import('../../types').TankDisplacement, text: string) => {
+    const num = parseFloat(text.replace(',', '.')) || 0;
+    onDisplacementChange?.({ ...displacement, [field]: num > 0 ? num : undefined });
+  };
 
   return (
     <View style={styles.stockCard}>
+      {/* Elementos del tanque (desplazamiento) */}
+      <TouchableOpacity
+        style={styles.displacementToggle}
+        onPress={() => setShowDisplacement(v => !v)}
+        activeOpacity={0.7}
+      >
+        <Ionicons name="cube-outline" size={16} color={COLORS.primary} />
+        <Text style={styles.displacementToggleText}>Elementos del tanque</Text>
+        {hasDisplacement && (
+          <View style={styles.displacementBadge}>
+            <Text style={styles.displacementBadgeText}>−{displacedLiters}L</Text>
+          </View>
+        )}
+        <Ionicons name={showDisplacement ? 'chevron-up' : 'chevron-down'} size={14} color={COLORS.textMuted} />
+      </TouchableOpacity>
+
+      {showDisplacement && (
+        <View style={styles.displacementPanel}>
+          {([
+            { key: 'substrate_kg' as const, label: 'Sustrato', unit: 'kg', icon: '🪨', factor: 0.6 },
+            { key: 'rocks_kg' as const,     label: 'Rocas',    unit: 'kg', icon: '⛰️', factor: 0.38 },
+            { key: 'wood_kg' as const,      label: 'Troncos',  unit: 'kg', icon: '🪵', factor: 0.8 },
+            { key: 'plants_kg' as const,    label: 'Plantas',  unit: 'kg', icon: '🌿', factor: 0.5 },
+            { key: 'equipment_liters' as const, label: 'Equipos', unit: 'L', icon: '⚙️', factor: 1.0 },
+          ]).map(item => {
+            const val = displacement?.[item.key] ?? 0;
+            const displaced = Math.round(val * item.factor * 10) / 10;
+            return (
+              <View key={item.key} style={styles.displacementRow}>
+                <Text style={styles.displacementEmoji}>{item.icon}</Text>
+                <Text style={styles.displacementFieldLabel}>{item.label}</Text>
+                <TextInput
+                  style={styles.displacementInput}
+                  keyboardType="numeric"
+                  placeholder="0"
+                  placeholderTextColor={COLORS.textMuted}
+                  defaultValue={val > 0 ? String(val) : ''}
+                  onEndEditing={e => updateField(item.key, e.nativeEvent.text)}
+                  maxLength={5}
+                />
+                <Text style={styles.displacementUnit}>{item.unit}</Text>
+                {val > 0 && <Text style={styles.displacementResult}>= −{displaced}L</Text>}
+              </View>
+            );
+          })}
+          <View style={styles.displacementSummary}>
+            <View style={styles.displacementSummaryRow}>
+              <Text style={styles.displacementSummaryLabel}>Volumen total</Text>
+              <Text style={styles.displacementSummaryValue}>{volumeLiters} L</Text>
+            </View>
+            {displacedLiters > 0 && (
+              <View style={styles.displacementSummaryRow}>
+                <Text style={styles.displacementSummaryLabel}>Desplazado</Text>
+                <Text style={[styles.displacementSummaryValue, { color: COLORS.warning }]}>−{displacedLiters} L</Text>
+              </View>
+            )}
+            <View style={[styles.displacementSummaryRow, { borderTopWidth: 1, borderTopColor: COLORS.border, paddingTop: 8, marginTop: 4 }]}>
+              <Text style={[styles.displacementSummaryLabel, { fontFamily: FONTS.sansBd, color: COLORS.text }]}>Agua real</Text>
+              <Text style={[styles.displacementSummaryValue, { fontFamily: FONTS.sansEb, color: COLORS.primary }]}>{effectiveVolume} L</Text>
+            </View>
+          </View>
+        </View>
+      )}
+
       {/* Stats principales */}
       <View style={styles.stockRow}>
         {[
-          { label: 'Volumen', value: `${volumeLiters}L`, color: COLORS.primary },
+          { label: hasDisplacement ? 'Agua real' : 'Volumen', value: `${hasDisplacement ? effectiveVolume : volumeLiters}L`, color: COLORS.primary },
           { label: 'Bioload', value: `${totalBioload}`, color: COLORS.textSecondary },
           { label: 'Capacidad', value: `${tankCapacity}`, color: COLORS.textSecondary },
           { label: 'Carga', value: `${stockPercent}%`, color },
@@ -333,7 +409,7 @@ export default function AquariumScreen({ navigation }: any) {
   const { fish: fishDatabase } = useFishDatabase();
   const {
     aquariums, selectedAquarium, selectedId,
-    selectAquarium, addAquarium, deleteAquarium,
+    selectAquarium, addAquarium, updateAquarium, deleteAquarium,
     setFishQty, removeFish: removeFishRaw,
     loading: aquariumsLoading,
   } = useAquariums();
@@ -751,7 +827,14 @@ export default function AquariumScreen({ navigation }: any) {
                   <Text style={styles.stockToggleText}>Calculadora de stock</Text>
                   <Ionicons name={showStockCalc ? 'chevron-up' : 'chevron-down'} size={16} color={COLORS.textMuted} />
                 </TouchableOpacity>
-                {showStockCalc && <StockCalc volumeLiters={selectedAquarium.volume_liters} fishList={fishList} />}
+                {showStockCalc && (
+                  <StockCalc
+                    volumeLiters={selectedAquarium.volume_liters}
+                    fishList={fishList}
+                    displacement={selectedAquarium.displacement}
+                    onDisplacementChange={(d) => updateAquarium(selectedAquarium.id, { displacement: d })}
+                  />
+                )}
 
                 {/* ── Fish list header ── */}
                 <View style={styles.sectionRow}>
@@ -1279,6 +1362,43 @@ const styles = StyleSheet.create({
   stockAlertIcon: { fontSize: 13, marginTop: 1 },
   stockAlertTitle: { fontSize: 11, fontFamily: FONTS.sansBd, marginBottom: 1 },
   stockAlertBody: { fontSize: 10, fontFamily: FONTS.sans, color: COLORS.textSecondary, lineHeight: 15 },
+
+  // Displacement panel
+  displacementToggle: {
+    flexDirection: 'row', alignItems: 'center', gap: 6,
+    paddingVertical: SPACING.sm, paddingHorizontal: SPACING.xs,
+    marginBottom: SPACING.sm,
+  },
+  displacementToggleText: { flex: 1, fontSize: 12, fontFamily: FONTS.sansSb, color: COLORS.primary },
+  displacementBadge: {
+    backgroundColor: COLORS.warning + '22', borderRadius: 8,
+    paddingHorizontal: 6, paddingVertical: 2, marginRight: 4,
+  },
+  displacementBadgeText: { fontSize: 10, fontFamily: FONTS.sansBd, color: COLORS.warning },
+  displacementPanel: {
+    backgroundColor: COLORS.background, borderRadius: BORDER_RADIUS.md,
+    padding: SPACING.sm, marginBottom: SPACING.md,
+  },
+  displacementRow: {
+    flexDirection: 'row', alignItems: 'center', gap: 6,
+    marginBottom: 6,
+  },
+  displacementEmoji: { fontSize: 14, width: 22, textAlign: 'center' },
+  displacementFieldLabel: { fontSize: 12, fontFamily: FONTS.sans, color: COLORS.textSecondary, width: 60 },
+  displacementInput: {
+    backgroundColor: COLORS.backgroundCard, borderWidth: 1, borderColor: COLORS.border,
+    borderRadius: 8, paddingHorizontal: 8, paddingVertical: 4,
+    width: 50, fontSize: 13, fontFamily: FONTS.sansMd, color: COLORS.text, textAlign: 'center',
+  },
+  displacementUnit: { fontSize: 11, fontFamily: FONTS.sans, color: COLORS.textMuted, width: 18 },
+  displacementResult: { fontSize: 11, fontFamily: FONTS.sansSb, color: COLORS.warning, flex: 1, textAlign: 'right' },
+  displacementSummary: {
+    marginTop: SPACING.sm, paddingTop: SPACING.sm,
+    borderTopWidth: 1, borderTopColor: COLORS.border + '50',
+  },
+  displacementSummaryRow: { flexDirection: 'row', justifyContent: 'space-between', marginBottom: 3 },
+  displacementSummaryLabel: { fontSize: 12, fontFamily: FONTS.sans, color: COLORS.textMuted },
+  displacementSummaryValue: { fontSize: 12, fontFamily: FONTS.sansSb, color: COLORS.text },
 
   // Section header
   sectionRow: {

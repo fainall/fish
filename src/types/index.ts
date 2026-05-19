@@ -271,6 +271,14 @@ export interface AquariumFishEntry {
   qty: number;
 }
 
+export interface TankDisplacement {
+  substrate_kg?: number;
+  rocks_kg?: number;
+  wood_kg?: number;
+  plants_kg?: number;
+  equipment_liters?: number;
+}
+
 export interface AquariumEntry {
   id: string;
   name: string;
@@ -282,6 +290,7 @@ export interface AquariumEntry {
   aquarium_style?: AquariumStyle;
   description?: string;
   fish: AquariumFishEntry[];
+  displacement?: TankDisplacement;
   created_at: string;
 }
 
