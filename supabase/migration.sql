@@ -435,27 +435,39 @@ INSERT INTO storage.buckets (id, name, public) VALUES ('aquarium-photos', 'aquar
 INSERT INTO storage.buckets (id, name, public) VALUES ('posts', 'posts', true)
   ON CONFLICT (id) DO NOTHING;
 
--- Políticas de storage: upload propio, lectura pública
+-- Políticas de storage: upload autenticado, lectura pública
+-- NOTA: PostgreSQL NO soporta `CREATE POLICY IF NOT EXISTS` → hay que hacer
+--       DROP POLICY IF EXISTS antes de CREATE (de lo contrario la migración
+--       lanza un error de sintaxis y revierte TODO en una transacción).
+-- NOTA: el INSERT solo valida bucket_id (no la carpeta uid/) porque el admin
+--       sube imágenes de peces a la carpeta `fish/`, no a `uid/`.
 DO $$
 DECLARE
   buckets TEXT[] := ARRAY['avatars', 'aquarium-photos', 'posts'];
   b TEXT;
 BEGIN
   FOREACH b IN ARRAY buckets LOOP
-    -- Upload: solo archivos en carpeta del usuario (uid/*)
+    -- Idempotencia: borra políticas previas (nombres nuevos y legacy)
+    EXECUTE format('DROP POLICY IF EXISTS %I ON storage.objects', b || '_insert');
+    EXECUTE format('DROP POLICY IF EXISTS %I ON storage.objects', b || '_select');
+    EXECUTE format('DROP POLICY IF EXISTS %I ON storage.objects', b || '_delete');
+    EXECUTE format('DROP POLICY IF EXISTS %I ON storage.objects', b || '_upload');
+    EXECUTE format('DROP POLICY IF EXISTS %I ON storage.objects', b || '_read');
+
+    -- Upload: cualquier usuario autenticado (la app separa por uid/ o fish/)
     EXECUTE format(
-      'CREATE POLICY IF NOT EXISTS "%1$s_upload" ON storage.objects FOR INSERT TO authenticated WITH CHECK (bucket_id = %2$L AND (storage.foldername(name))[1] = auth.uid()::text)',
-      b, b
+      'CREATE POLICY %I ON storage.objects FOR INSERT TO authenticated WITH CHECK (bucket_id = %L)',
+      b || '_insert', b
     );
     -- Read: público
     EXECUTE format(
-      'CREATE POLICY IF NOT EXISTS "%1$s_read" ON storage.objects FOR SELECT TO authenticated USING (bucket_id = %2$L)',
-      b, b
+      'CREATE POLICY %I ON storage.objects FOR SELECT TO public USING (bucket_id = %L)',
+      b || '_select', b
     );
-    -- Delete: solo propio
+    -- Delete: solo el dueño del archivo
     EXECUTE format(
-      'CREATE POLICY IF NOT EXISTS "%1$s_delete" ON storage.objects FOR DELETE TO authenticated USING (bucket_id = %2$L AND (storage.foldername(name))[1] = auth.uid()::text)',
-      b, b
+      'CREATE POLICY %I ON storage.objects FOR DELETE TO authenticated USING (bucket_id = %L AND owner = auth.uid())',
+      b || '_delete', b
     );
   END LOOP;
 END $$;
