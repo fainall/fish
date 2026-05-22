@@ -72,19 +72,27 @@ function readFileAsArrayBuffer(uri: string): Promise<ArrayBuffer> {
 }
 
 async function uploadPhoto(userId: string, aquariumId: string, localUri: string): Promise<string> {
-  const compressedUri = await compressImage(localUri);
-  const path = `${userId}/${aquariumId}/${Date.now()}.jpg`;
+  let step = 'compress';
+  try {
+    const compressedUri = await compressImage(localUri);
+    const path = `${userId}/${aquariumId}/${Date.now()}.jpg`;
 
-  const arrayBuffer = await readFileAsArrayBuffer(compressedUri);
+    step = 'readFile';
+    const arrayBuffer = await readFileAsArrayBuffer(compressedUri);
 
-  const { error } = await (supabase as any).storage.from('posts')
-    .upload(path, arrayBuffer, { contentType: 'image/jpeg', upsert: false });
-  if (error) throw new Error(error.message ?? 'Upload failed');
+    step = `upload (${(arrayBuffer.byteLength / 1024).toFixed(0)}KB)`;
+    const { error } = await (supabase as any).storage.from('posts')
+      .upload(path, arrayBuffer, { contentType: 'image/jpeg', upsert: false });
+    if (error) throw new Error(error.message);
 
-  const { data } = (supabase as any).storage.from('posts').getPublicUrl(path);
-  const url = data?.publicUrl as string | undefined;
-  if (!url) throw new Error('No se pudo obtener la URL pública');
-  return url;
+    step = 'getPublicUrl';
+    const { data } = (supabase as any).storage.from('posts').getPublicUrl(path);
+    const url = data?.publicUrl as string | undefined;
+    if (!url) throw new Error('URL vacía');
+    return url;
+  } catch (e: any) {
+    throw new Error(`[${step}] ${e?.message ?? String(e)}`);
+  }
 }
 
 export function AquariumGalleryProvider({ children }: { children: React.ReactNode }) {

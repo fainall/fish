@@ -61,19 +61,16 @@ export default function GalleryScreen({ navigation }: any) {
   async function confirmUpload() {
     if (!pendingUri || !selectedAquarium) return;
     setUploading(true);
-    // Let React render the spinner before starting heavy work
-    InteractionManager.runAfterInteractions(async () => {
-      try {
-        await add(selectedAquarium.id, pendingUri!, caption.trim() || undefined);
-      } catch (e) {
-        Alert.alert('Error', 'No se pudo subir la foto. Intenta de nuevo.');
-        console.warn('[Gallery] confirmUpload error:', e);
-      } finally {
-        setUploading(false);
-        setPendingUri(null);
-        setCaption('');
-      }
-    });
+    try {
+      await add(selectedAquarium.id, pendingUri, caption.trim() || undefined);
+    } catch (e: any) {
+      const msg = e?.message ?? String(e);
+      Alert.alert('Error al subir foto', msg);
+    } finally {
+      setUploading(false);
+      setPendingUri(null);
+      setCaption('');
+    }
   }
 
   if (!selectedAquarium) {
