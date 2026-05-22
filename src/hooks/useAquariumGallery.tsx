@@ -4,10 +4,12 @@
  * Supabase table: aquarium_photos (id, user_id, aquarium_id, image_url, caption, taken_at, created_at)
  * Supabase Storage bucket: posts
  *
- * Upload strategy (v5 — 2025-05-22):
- *   1. FileSystem.readAsStringAsync → base64 string (native Expo API, never crashes)
- *   2. base64ToArrayBuffer → pure JS decoder (no atob, no external package)
- *   3. supabase.storage.upload(path, arrayBuffer) → standard Supabase client
+ * Upload strategy (v6 — 2025-05-22):
+ *   1. new File(uri).bytes() → reads file natively into a Uint8Array (SDK 54 API)
+ *   2. supabase.storage.upload(path, bytes) → standard Supabase client
+ *
+ * Uses the NEW expo-file-system API (File class). The legacy methods
+ * (getInfoAsync / readAsStringAsync) are deprecated in SDK 54 and THROW.
  *
  * Previous approaches that crashed on this device:
  *   - fetch().blob() → RN fetch can't read local file:// URIs
@@ -15,11 +17,12 @@
  *   - XMLHttpRequest arraybuffer → can't read local file:// URIs
  *   - FileSystem.uploadAsync → causes uncatchable native crash
  *   - expo-image-manipulator → causes uncatchable native crash
+ *   - FileSystem.getInfoAsync (legacy) → throws "deprecated" in SDK 54
  */
 import React, { createContext, useContext, useEffect, useState, useCallback } from 'react';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { Alert } from 'react-native';
-import * as FileSystem from 'expo-file-system';
+import { File } from 'expo-file-system';
 import { supabase, IS_DEMO_MODE } from '../services/supabase';
 import { useAuth } from './useAuth';
 
@@ -43,59 +46,31 @@ interface Ctx {
 const GalleryCtx = createContext<Ctx | undefined>(undefined);
 const localKey = (uid: string) => `@aquamanager_gallery_${uid}`;
 
-/* ── Pure-JS base64 → ArrayBuffer (no atob, no external deps) ────────── */
-const B64_CHARS = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/';
-const B64_LOOKUP = new Uint8Array(256);
-for (let i = 0; i < B64_CHARS.length; i++) B64_LOOKUP[B64_CHARS.charCodeAt(i)] = i;
-
-function base64ToArrayBuffer(base64: string): ArrayBuffer {
-  let bufLen = Math.floor(base64.length * 0.75);
-  if (base64.length > 0 && base64[base64.length - 1] === '=') bufLen--;
-  if (base64.length > 1 && base64[base64.length - 2] === '=') bufLen--;
-
-  const bytes = new Uint8Array(bufLen);
-  let p = 0;
-  for (let i = 0; i < base64.length; i += 4) {
-    const a = B64_LOOKUP[base64.charCodeAt(i)];
-    const b = B64_LOOKUP[base64.charCodeAt(i + 1)];
-    const c = B64_LOOKUP[base64.charCodeAt(i + 2)];
-    const d = B64_LOOKUP[base64.charCodeAt(i + 3)];
-    bytes[p++] = (a << 2) | (b >> 4);
-    bytes[p++] = ((b & 15) << 4) | (c >> 2);
-    bytes[p++] = ((c & 3) << 6) | (d & 63);
-  }
-  return bytes.buffer;
-}
-
-/* ── Upload: read base64 → decode → supabase.storage.upload ──────────── */
+/* ── Upload: File.bytes() → supabase.storage.upload (SDK 54 API) ─────── */
 async function uploadPhoto(
   userId: string,
   aquariumId: string,
   fileUri: string,
 ): Promise<string> {
-  // 1. Verify file exists
-  const info = await FileSystem.getInfoAsync(fileUri);
-  if (!info.exists) {
+  // 1. Create a File reference (new expo-file-system API)
+  const file = new File(fileUri);
+
+  // 2. Verify it exists
+  if (!file.exists) {
     throw new Error('El archivo no existe: ' + fileUri.slice(-40));
   }
 
-  // 2. Read file as base64 (stays in native until returned as string)
-  const base64 = await FileSystem.readAsStringAsync(fileUri, {
-    encoding: FileSystem.EncodingType.Base64,
-  });
-
-  if (!base64 || base64.length < 100) {
-    throw new Error('Archivo vacio o corrupto (base64 len=' + base64.length + ')');
+  // 3. Read bytes natively into a Uint8Array (no base64, no atob)
+  const bytes = await file.bytes();
+  if (!bytes || bytes.length < 100) {
+    throw new Error('Archivo vacio o corrupto (' + (bytes?.length ?? 0) + ' bytes)');
   }
-
-  // 3. Decode base64 → ArrayBuffer (pure JS, no native calls)
-  const arrayBuffer = base64ToArrayBuffer(base64);
 
   // 4. Upload via Supabase Storage client
   const storagePath = `${userId}/${aquariumId}/${Date.now()}.jpg`;
-  const { data, error } = await supabase.storage
+  const { error } = await supabase.storage
     .from('posts')
-    .upload(storagePath, arrayBuffer, {
+    .upload(storagePath, bytes, {
       contentType: 'image/jpeg',
       upsert: false,
     });
