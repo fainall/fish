@@ -1,5 +1,6 @@
 import { useState, useEffect, useCallback, useRef } from 'react';
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import { File } from 'expo-file-system';
 import { supabase, IS_DEMO_MODE } from '../services/supabase';
 import { Post, PostComment } from '../types';
 import { DEMO_POSTS, DEMO_COMMENTS } from '../data/communityData';
@@ -176,18 +177,14 @@ export function useCommunity() {
       const mime   = safe === 'png' ? 'image/png' : safe === 'gif' ? 'image/gif' : safe === 'webp' ? 'image/webp' : 'image/jpeg';
       const path   = `${uid}/${Date.now()}.${safe === 'jpeg' ? 'jpg' : safe}`;
 
-      const arrayBuffer = await new Promise<ArrayBuffer>((resolve, reject) => {
-        const xhr = new XMLHttpRequest();
-        xhr.onload = () => resolve(xhr.response as ArrayBuffer);
-        xhr.onerror = () => reject(new Error('File read failed'));
-        xhr.responseType = 'arraybuffer';
-        xhr.open('GET', localUri, true);
-        xhr.send();
-      });
+      // Read file natively into Uint8Array (SDK 54 File API — no XHR, no crash)
+      const file = new File(localUri);
+      if (!file.exists) { console.warn('[Community] file not found:', localUri); return null; }
+      const bytes = await file.bytes();
 
       const { error } = await (supabase as any).storage
         .from('posts')
-        .upload(path, arrayBuffer, { contentType: mime, upsert: false });
+        .upload(path, bytes, { contentType: mime, upsert: false });
 
       if (error) return null;
 

@@ -7,6 +7,7 @@ import {
 import { LinearGradient } from 'expo-linear-gradient';
 import { Ionicons } from '@expo/vector-icons';
 import * as ImagePicker from 'expo-image-picker';
+import { File } from 'expo-file-system';
 import { COLORS, FONTS, SPACING, BORDER_RADIUS } from '../../constants/theme';
 import { useAuth } from '../../hooks/useAuth';
 import { useFishDatabase, EditableFish } from '../../hooks/useFishDatabase';
@@ -142,16 +143,12 @@ export default function AdminDashboardScreen() {
       const safeExt = ['png', 'jpg', 'jpeg', 'gif', 'webp'].includes(ext) ? ext : 'jpg';
       const mime = safeExt === 'png' ? 'image/png' : safeExt === 'gif' ? 'image/gif' : safeExt === 'webp' ? 'image/webp' : 'image/jpeg';
       const path = `fish/${Date.now()}.${safeExt}`;
-      const arrayBuffer = await new Promise<ArrayBuffer>((resolve, reject) => {
-        const xhr = new XMLHttpRequest();
-        xhr.onload = () => resolve(xhr.response as ArrayBuffer);
-        xhr.onerror = () => reject(new Error('File read failed'));
-        xhr.responseType = 'arraybuffer';
-        xhr.open('GET', localUri, true);
-        xhr.send();
-      });
+      // Read file natively into Uint8Array (SDK 54 File API — no XHR, no crash)
+      const file = new File(localUri);
+      if (!file.exists) { console.warn('[AdminDash] file not found:', localUri); return null; }
+      const bytes = await file.bytes();
       const { error } = await (supabase as any).storage
-        .from('posts').upload(path, arrayBuffer, { contentType: mime, upsert: false });
+        .from('posts').upload(path, bytes, { contentType: mime, upsert: false });
       if (error) return null;
       const { data } = (supabase as any).storage.from('posts').getPublicUrl(path);
       return (data?.publicUrl as string) ?? null;
