@@ -143,9 +143,9 @@ export default function AdminDashboardScreen() {
       const mime = safeExt === 'png' ? 'image/png' : safeExt === 'gif' ? 'image/gif' : safeExt === 'webp' ? 'image/webp' : 'image/jpeg';
       const path = `fish/${Date.now()}.${safeExt}`;
       const response = await fetch(localUri);
-      const blob     = await response.blob();
+      const arrayBuffer = await response.arrayBuffer();
       const { error } = await (supabase as any).storage
-        .from('posts').upload(path, blob, { contentType: mime, upsert: false });
+        .from('posts').upload(path, arrayBuffer, { contentType: mime, upsert: false });
       if (error) return null;
       const { data } = (supabase as any).storage.from('posts').getPublicUrl(path);
       return (data?.publicUrl as string) ?? null;

@@ -60,18 +60,22 @@ async function compressImage(uri: string): Promise<string> {
   }
 }
 
-async function uploadPhoto(userId: string, aquariumId: string, localUri: string): Promise<string | null> {
-  try {
-    const compressedUri = await compressImage(localUri);
-    const path = `${userId}/${aquariumId}/${Date.now()}.jpg`;
-    const response = await fetch(compressedUri);
-    const blob     = await response.blob();
-    const { error } = await (supabase as any).storage.from('posts')
-      .upload(path, blob, { contentType: 'image/jpeg', upsert: false });
-    if (error) { console.warn('[Gallery] upload error:', error.message); return null; }
-    const { data } = (supabase as any).storage.from('posts').getPublicUrl(path);
-    return (data?.publicUrl as string) ?? null;
-  } catch (e) { console.warn('[Gallery] uploadPhoto failed:', e); return null; }
+async function uploadPhoto(userId: string, aquariumId: string, localUri: string): Promise<string> {
+  const compressedUri = await compressImage(localUri);
+  const path = `${userId}/${aquariumId}/${Date.now()}.jpg`;
+
+  // React Native: fetch local file → arrayBuffer (native, no memory spike)
+  const response = await fetch(compressedUri);
+  const arrayBuffer = await response.arrayBuffer();
+
+  const { error } = await (supabase as any).storage.from('posts')
+    .upload(path, arrayBuffer, { contentType: 'image/jpeg', upsert: false });
+  if (error) throw new Error(error.message ?? 'Upload failed');
+
+  const { data } = (supabase as any).storage.from('posts').getPublicUrl(path);
+  const url = data?.publicUrl as string | undefined;
+  if (!url) throw new Error('No se pudo obtener la URL pública');
+  return url;
 }
 
 export function AquariumGalleryProvider({ children }: { children: React.ReactNode }) {
@@ -112,30 +116,28 @@ export function AquariumGalleryProvider({ children }: { children: React.ReactNod
     if (!user) return null;
     const taken_at = takenAt ?? new Date().toISOString();
 
-    let finalUrl = localUri; // fallback for demo
-    if (!IS_DEMO_MODE) {
-      const uploaded = await uploadPhoto(user.id, aquariumId, localUri);
-      if (uploaded) finalUrl = uploaded;
+    // Demo mode: save locally with the local file URI
+    if (IS_DEMO_MODE) {
+      const newPhoto: GalleryPhoto = {
+        id: `g_${Date.now()}`, aquarium_id: aquariumId, image_url: localUri,
+        caption, taken_at,
+      };
+      await persistLocal([newPhoto, ...photos]);
+      return newPhoto;
     }
 
-    if (!IS_DEMO_MODE) {
-      try {
-        const { data, error } = await supabase.from('aquarium_photos').insert({
-          user_id: user.id, aquarium_id: aquariumId,
-          image_url: finalUrl, caption, taken_at,
-        }).select().single();
-        if (!error && data) {
-          setPhotos(prev => [data, ...prev]);
-          return data as GalleryPhoto;
-        }
-      } catch (e) { console.warn('[Gallery] Supabase insert failed:', e); }
-    }
-    const newPhoto: GalleryPhoto = {
-      id: `g_${Date.now()}`, aquarium_id: aquariumId, image_url: finalUrl,
-      caption, taken_at,
-    };
-    await persistLocal([newPhoto, ...photos]);
-    return newPhoto;
+    // Production: upload to Supabase Storage (throws on failure)
+    const remoteUrl = await uploadPhoto(user.id, aquariumId, localUri);
+
+    const { data, error } = await supabase.from('aquarium_photos').insert({
+      user_id: user.id, aquarium_id: aquariumId,
+      image_url: remoteUrl, caption, taken_at,
+    }).select().single();
+
+    if (error || !data) throw new Error(error?.message ?? 'No se pudo guardar la foto');
+
+    setPhotos(prev => [data, ...prev]);
+    return data as GalleryPhoto;
   }, [user, photos, persistLocal]);
 
   const remove = useCallback(async (photoId: string) => {

@@ -177,11 +177,11 @@ export function useCommunity() {
       const path   = `${uid}/${Date.now()}.${safe === 'jpeg' ? 'jpg' : safe}`;
 
       const response = await fetch(localUri);
-      const blob     = await response.blob();
+      const arrayBuffer = await response.arrayBuffer();
 
       const { error } = await (supabase as any).storage
         .from('posts')
-        .upload(path, blob, { contentType: mime, upsert: false });
+        .upload(path, arrayBuffer, { contentType: mime, upsert: false });
 
       if (error) return null;
 
