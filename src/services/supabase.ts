@@ -5,6 +5,10 @@ import { Platform } from 'react-native';
 const URL  = process.env.EXPO_PUBLIC_SUPABASE_URL      ?? '';
 const ANON = process.env.EXPO_PUBLIC_SUPABASE_ANON_KEY ?? '';
 
+/** Exposed for native file uploads via expo-file-system */
+export const SUPABASE_URL = URL;
+export const SUPABASE_ANON_KEY = ANON;
+
 /** true → sin Supabase, usa AsyncStorage local */
 export const IS_DEMO_MODE = !URL || URL.includes('YOUR_') || !ANON || ANON.includes('PEGA_');
 

@@ -17,7 +17,7 @@
  */
 import React, { createContext, useContext, useEffect, useState, useCallback } from 'react';
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import { supabase, IS_DEMO_MODE } from '../services/supabase';
+import { supabase, IS_DEMO_MODE, SUPABASE_URL, SUPABASE_ANON_KEY } from '../services/supabase';
 import { useAuth } from './useAuth';
 
 export interface GalleryPhoto {
@@ -60,36 +60,41 @@ async function compressImage(uri: string): Promise<string> {
   }
 }
 
-function readFileAsArrayBuffer(uri: string): Promise<ArrayBuffer> {
-  return new Promise((resolve, reject) => {
-    const xhr = new XMLHttpRequest();
-    xhr.onload = () => resolve(xhr.response as ArrayBuffer);
-    xhr.onerror = () => reject(new Error('No se pudo leer el archivo'));
-    xhr.responseType = 'arraybuffer';
-    xhr.open('GET', uri, true);
-    xhr.send();
-  });
-}
-
 async function uploadPhoto(userId: string, aquariumId: string, localUri: string): Promise<string> {
   let step = 'compress';
   try {
     const compressedUri = await compressImage(localUri);
-    const path = `${userId}/${aquariumId}/${Date.now()}.jpg`;
+    const path = `posts/${userId}/${aquariumId}/${Date.now()}.jpg`;
 
-    step = 'readFile';
-    const arrayBuffer = await readFileAsArrayBuffer(compressedUri);
+    step = 'getSession';
+    const { data: sessionData } = await supabase.auth.getSession();
+    const token = sessionData?.session?.access_token ?? SUPABASE_ANON_KEY;
 
-    step = `upload (${(arrayBuffer.byteLength / 1024).toFixed(0)}KB)`;
-    const { error } = await (supabase as any).storage.from('posts')
-      .upload(path, arrayBuffer, { contentType: 'image/jpeg', upsert: false });
-    if (error) throw new Error(error.message);
+    step = 'uploadAsync';
+    const FS = await import('expo-file-system');
+    const uploadAsync = FS.uploadAsync ?? (FS as any).default?.uploadAsync;
+    const UploadType = (FS as any).FileSystemUploadType ?? (FS as any).default?.FileSystemUploadType;
+
+    const uploadUrl = `${SUPABASE_URL}/storage/v1/object/${path}`;
+    const result = await uploadAsync(uploadUrl, compressedUri, {
+      httpMethod: 'POST',
+      uploadType: UploadType.BINARY_CONTENT,
+      headers: {
+        'Authorization': `Bearer ${token}`,
+        'apikey': SUPABASE_ANON_KEY,
+        'Content-Type': 'image/jpeg',
+        'x-upsert': 'false',
+      },
+    });
+
+    if (result.status < 200 || result.status >= 300) {
+      const body = result.body ? JSON.parse(result.body) : {};
+      throw new Error(body.message ?? body.error ?? `HTTP ${result.status}`);
+    }
 
     step = 'getPublicUrl';
-    const { data } = (supabase as any).storage.from('posts').getPublicUrl(path);
-    const url = data?.publicUrl as string | undefined;
-    if (!url) throw new Error('URL vacía');
-    return url;
+    const publicUrl = `${SUPABASE_URL}/storage/v1/object/public/${path}`;
+    return publicUrl;
   } catch (e: any) {
     throw new Error(`[${step}] ${e?.message ?? String(e)}`);
   }
