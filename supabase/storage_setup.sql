@@ -19,6 +19,29 @@
 --   aquarium-photos  → reserved (legacy)
 -- ═══════════════════════════════════════════════════════════════════════════
 
+-- ─── 0. Table aquarium_photos (gallery rows) ────────────────────────────────
+-- Lives only in migration.sql, which never applied (the policy syntax error
+-- rolled it back). The gallery upload writes a row here AFTER the storage
+-- upload succeeds, so without this table the upload fails at the DB step.
+CREATE TABLE IF NOT EXISTS public.aquarium_photos (
+  id          UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  user_id     UUID NOT NULL REFERENCES auth.users(id) ON DELETE CASCADE,
+  aquarium_id TEXT NOT NULL,
+  image_url   TEXT NOT NULL,
+  caption     TEXT,
+  taken_at    TIMESTAMPTZ DEFAULT now()
+);
+ALTER TABLE public.aquarium_photos ENABLE ROW LEVEL SECURITY;
+
+DROP POLICY IF EXISTS "photos_owner" ON public.aquarium_photos;
+CREATE POLICY "photos_owner" ON public.aquarium_photos
+  FOR ALL TO authenticated USING (auth.uid() = user_id)
+  WITH CHECK (auth.uid() = user_id);
+
+DROP POLICY IF EXISTS "photos_public_read" ON public.aquarium_photos;
+CREATE POLICY "photos_public_read" ON public.aquarium_photos
+  FOR SELECT TO authenticated USING (true);
+
 -- ─── 1. Create public buckets ───────────────────────────────────────────────
 INSERT INTO storage.buckets (id, name, public) VALUES
   ('posts',           'posts',           true),
