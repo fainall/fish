@@ -176,8 +176,14 @@ export function useCommunity() {
       const mime   = safe === 'png' ? 'image/png' : safe === 'gif' ? 'image/gif' : safe === 'webp' ? 'image/webp' : 'image/jpeg';
       const path   = `${uid}/${Date.now()}.${safe === 'jpeg' ? 'jpg' : safe}`;
 
-      const response = await fetch(localUri);
-      const arrayBuffer = await response.arrayBuffer();
+      const arrayBuffer = await new Promise<ArrayBuffer>((resolve, reject) => {
+        const xhr = new XMLHttpRequest();
+        xhr.onload = () => resolve(xhr.response as ArrayBuffer);
+        xhr.onerror = () => reject(new Error('File read failed'));
+        xhr.responseType = 'arraybuffer';
+        xhr.open('GET', localUri, true);
+        xhr.send();
+      });
 
       const { error } = await (supabase as any).storage
         .from('posts')

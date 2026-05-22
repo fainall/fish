@@ -60,13 +60,22 @@ async function compressImage(uri: string): Promise<string> {
   }
 }
 
+function readFileAsArrayBuffer(uri: string): Promise<ArrayBuffer> {
+  return new Promise((resolve, reject) => {
+    const xhr = new XMLHttpRequest();
+    xhr.onload = () => resolve(xhr.response as ArrayBuffer);
+    xhr.onerror = () => reject(new Error('No se pudo leer el archivo'));
+    xhr.responseType = 'arraybuffer';
+    xhr.open('GET', uri, true);
+    xhr.send();
+  });
+}
+
 async function uploadPhoto(userId: string, aquariumId: string, localUri: string): Promise<string> {
   const compressedUri = await compressImage(localUri);
   const path = `${userId}/${aquariumId}/${Date.now()}.jpg`;
 
-  // React Native: fetch local file → arrayBuffer (native, no memory spike)
-  const response = await fetch(compressedUri);
-  const arrayBuffer = await response.arrayBuffer();
+  const arrayBuffer = await readFileAsArrayBuffer(compressedUri);
 
   const { error } = await (supabase as any).storage.from('posts')
     .upload(path, arrayBuffer, { contentType: 'image/jpeg', upsert: false });

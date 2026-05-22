@@ -142,8 +142,14 @@ export default function AdminDashboardScreen() {
       const safeExt = ['png', 'jpg', 'jpeg', 'gif', 'webp'].includes(ext) ? ext : 'jpg';
       const mime = safeExt === 'png' ? 'image/png' : safeExt === 'gif' ? 'image/gif' : safeExt === 'webp' ? 'image/webp' : 'image/jpeg';
       const path = `fish/${Date.now()}.${safeExt}`;
-      const response = await fetch(localUri);
-      const arrayBuffer = await response.arrayBuffer();
+      const arrayBuffer = await new Promise<ArrayBuffer>((resolve, reject) => {
+        const xhr = new XMLHttpRequest();
+        xhr.onload = () => resolve(xhr.response as ArrayBuffer);
+        xhr.onerror = () => reject(new Error('File read failed'));
+        xhr.responseType = 'arraybuffer';
+        xhr.open('GET', localUri, true);
+        xhr.send();
+      });
       const { error } = await (supabase as any).storage
         .from('posts').upload(path, arrayBuffer, { contentType: mime, upsert: false });
       if (error) return null;
