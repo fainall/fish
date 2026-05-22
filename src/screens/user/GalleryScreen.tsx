@@ -58,19 +58,27 @@ export default function GalleryScreen({ navigation }: any) {
     }
   }
 
-  async function confirmUpload() {
+  function confirmUpload() {
     if (!pendingUri || !selectedAquarium) return;
     setUploading(true);
-    try {
-      await add(selectedAquarium.id, pendingUri, caption.trim() || undefined);
-    } catch (e: any) {
-      const msg = e?.message ?? String(e);
-      Alert.alert('Error al subir foto', msg);
-    } finally {
-      setUploading(false);
-      setPendingUri(null);
-      setCaption('');
-    }
+    // Run in setTimeout to fully isolate from React's render cycle
+    const uri = pendingUri;
+    const aqId = selectedAquarium.id;
+    const cap = caption.trim() || undefined;
+    setTimeout(async () => {
+      try {
+        await add(aqId, uri, cap);
+        setUploading(false);
+        setPendingUri(null);
+        setCaption('');
+      } catch (e: any) {
+        setUploading(false);
+        setPendingUri(null);
+        setCaption('');
+        const msg = e?.message ?? String(e);
+        Alert.alert('Error al subir foto', msg);
+      }
+    }, 50);
   }
 
   if (!selectedAquarium) {

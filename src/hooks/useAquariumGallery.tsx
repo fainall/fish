@@ -4,14 +4,26 @@
  * Supabase table: aquarium_photos (id, user_id, aquarium_id, image_url, caption, taken_at, created_at)
  * Supabase Storage bucket: posts
  *
- * Upload uses expo-file-system uploadAsync (streams from disk, never loads into JS memory).
+ * Upload strategy (v5 — 2025-05-22):
+ *   1. FileSystem.readAsStringAsync → base64 string (native Expo API, never crashes)
+ *   2. base64ToArrayBuffer → pure JS decoder (no atob, no external package)
+ *   3. supabase.storage.upload(path, arrayBuffer) → standard Supabase client
+ *
+ * Previous approaches that crashed on this device:
+ *   - fetch().blob() → RN fetch can't read local file:// URIs
+ *   - atob() + Uint8Array → atob crashes Hermes on large strings
+ *   - XMLHttpRequest arraybuffer → can't read local file:// URIs
+ *   - FileSystem.uploadAsync → causes uncatchable native crash
+ *   - expo-image-manipulator → causes uncatchable native crash
  */
 import React, { createContext, useContext, useEffect, useState, useCallback } from 'react';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { Alert } from 'react-native';
-import { supabase, IS_DEMO_MODE, SUPABASE_URL, SUPABASE_ANON_KEY } from '../services/supabase';
+import * as FileSystem from 'expo-file-system';
+import { supabase, IS_DEMO_MODE } from '../services/supabase';
 import { useAuth } from './useAuth';
 
+/* ── Types ────────────────────────────────────────────────────────────── */
 export interface GalleryPhoto {
   id:          string;
   aquarium_id: string;
@@ -31,43 +43,70 @@ interface Ctx {
 const GalleryCtx = createContext<Ctx | undefined>(undefined);
 const localKey = (uid: string) => `@aquamanager_gallery_${uid}`;
 
-/* ── Upload a photo to Supabase Storage via native HTTP (no JS memory) ─── */
-async function nativeUpload(userId: string, aquariumId: string, fileUri: string): Promise<string> {
-  const storagePath = `${userId}/${aquariumId}/${Date.now()}.jpg`;
+/* ── Pure-JS base64 → ArrayBuffer (no atob, no external deps) ────────── */
+const B64_CHARS = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/';
+const B64_LOOKUP = new Uint8Array(256);
+for (let i = 0; i < B64_CHARS.length; i++) B64_LOOKUP[B64_CHARS.charCodeAt(i)] = i;
 
-  // Get auth token
-  const { data: sess } = await supabase.auth.getSession();
-  const token = sess?.session?.access_token ?? SUPABASE_ANON_KEY;
+function base64ToArrayBuffer(base64: string): ArrayBuffer {
+  let bufLen = Math.floor(base64.length * 0.75);
+  if (base64.length > 0 && base64[base64.length - 1] === '=') bufLen--;
+  if (base64.length > 1 && base64[base64.length - 2] === '=') bufLen--;
 
-  // Dynamic import expo-file-system
-  const FS = await import('expo-file-system');
-  const uploadAsync = FS.uploadAsync ?? (FS as any).default?.uploadAsync;
-  const UploadType  = (FS as any).FileSystemUploadType ?? (FS as any).default?.FileSystemUploadType;
+  const bytes = new Uint8Array(bufLen);
+  let p = 0;
+  for (let i = 0; i < base64.length; i += 4) {
+    const a = B64_LOOKUP[base64.charCodeAt(i)];
+    const b = B64_LOOKUP[base64.charCodeAt(i + 1)];
+    const c = B64_LOOKUP[base64.charCodeAt(i + 2)];
+    const d = B64_LOOKUP[base64.charCodeAt(i + 3)];
+    bytes[p++] = (a << 2) | (b >> 4);
+    bytes[p++] = ((b & 15) << 4) | (c >> 2);
+    bytes[p++] = ((c & 3) << 6) | (d & 63);
+  }
+  return bytes.buffer;
+}
 
-  if (!uploadAsync || !UploadType) {
-    throw new Error('expo-file-system uploadAsync no disponible');
+/* ── Upload: read base64 → decode → supabase.storage.upload ──────────── */
+async function uploadPhoto(
+  userId: string,
+  aquariumId: string,
+  fileUri: string,
+): Promise<string> {
+  // 1. Verify file exists
+  const info = await FileSystem.getInfoAsync(fileUri);
+  if (!info.exists) {
+    throw new Error('El archivo no existe: ' + fileUri.slice(-40));
   }
 
-  // Upload directly from disk → Supabase Storage REST API
-  const url = `${SUPABASE_URL}/storage/v1/object/posts/${storagePath}`;
-  const res = await uploadAsync(url, fileUri, {
-    httpMethod: 'POST',
-    uploadType: UploadType.BINARY_CONTENT,
-    headers: {
-      'Authorization': `Bearer ${token}`,
-      'apikey': SUPABASE_ANON_KEY,
-      'Content-Type': 'image/jpeg',
-      'x-upsert': 'false',
-    },
+  // 2. Read file as base64 (stays in native until returned as string)
+  const base64 = await FileSystem.readAsStringAsync(fileUri, {
+    encoding: FileSystem.EncodingType.Base64,
   });
 
-  if (!res || res.status < 200 || res.status >= 300) {
-    let msg = `HTTP ${res?.status ?? 'unknown'}`;
-    try { const b = JSON.parse(res.body); msg = b.message ?? b.error ?? msg; } catch {}
-    throw new Error(msg);
+  if (!base64 || base64.length < 100) {
+    throw new Error('Archivo vacio o corrupto (base64 len=' + base64.length + ')');
   }
 
-  return `${SUPABASE_URL}/storage/v1/object/public/posts/${storagePath}`;
+  // 3. Decode base64 → ArrayBuffer (pure JS, no native calls)
+  const arrayBuffer = base64ToArrayBuffer(base64);
+
+  // 4. Upload via Supabase Storage client
+  const storagePath = `${userId}/${aquariumId}/${Date.now()}.jpg`;
+  const { data, error } = await supabase.storage
+    .from('posts')
+    .upload(storagePath, arrayBuffer, {
+      contentType: 'image/jpeg',
+      upsert: false,
+    });
+
+  if (error) {
+    throw new Error('Storage: ' + (error.message || JSON.stringify(error)));
+  }
+
+  // 5. Get public URL
+  const { data: urlData } = supabase.storage.from('posts').getPublicUrl(storagePath);
+  return urlData.publicUrl;
 }
 
 /* ── Provider ──────────────────────────────────────────────────────────── */
@@ -105,19 +144,27 @@ export function AquariumGalleryProvider({ children }: { children: React.ReactNod
   }, [user]);
 
   // Add photo
-  const add = useCallback(async (aquariumId: string, localUri: string, caption?: string, takenAt?: string): Promise<GalleryPhoto | null> => {
+  const add = useCallback(async (
+    aquariumId: string,
+    localUri: string,
+    caption?: string,
+    takenAt?: string,
+  ): Promise<GalleryPhoto | null> => {
     if (!user) return null;
     const taken_at = takenAt ?? new Date().toISOString();
 
     // Demo mode → local only
     if (IS_DEMO_MODE) {
-      const p: GalleryPhoto = { id: `g_${Date.now()}`, aquarium_id: aquariumId, image_url: localUri, caption, taken_at };
+      const p: GalleryPhoto = {
+        id: `g_${Date.now()}`, aquarium_id: aquariumId,
+        image_url: localUri, caption, taken_at,
+      };
       await persistLocal([p, ...photos]);
       return p;
     }
 
     // Production → upload to Storage, then insert row
-    const remoteUrl = await nativeUpload(user.id, aquariumId, localUri);
+    const remoteUrl = await uploadPhoto(user.id, aquariumId, localUri);
 
     const { data, error } = await supabase.from('aquarium_photos').insert({
       user_id: user.id, aquarium_id: aquariumId,
