@@ -1,22 +1,14 @@
 /**
- * useAquariumGallery (#14) — Photos timeline per aquarium.
+ * useAquariumGallery — Photos timeline per aquarium.
  *
- * Required Supabase table:
- *   CREATE TABLE public.aquarium_photos (
- *     id            uuid PRIMARY KEY DEFAULT gen_random_uuid(),
- *     user_id       uuid NOT NULL REFERENCES auth.users(id) ON DELETE CASCADE,
- *     aquarium_id   uuid NOT NULL,
- *     image_url     text NOT NULL,
- *     caption       text,
- *     taken_at      timestamptz DEFAULT now(),
- *     created_at    timestamptz DEFAULT now()
- *   );
- *   ALTER TABLE aquarium_photos ENABLE ROW LEVEL SECURITY;
- *   CREATE POLICY "users own photos" ON aquarium_photos FOR ALL TO authenticated
- *     USING (auth.uid() = user_id) WITH CHECK (auth.uid() = user_id);
+ * Supabase table: aquarium_photos (id, user_id, aquarium_id, image_url, caption, taken_at, created_at)
+ * Supabase Storage bucket: posts
+ *
+ * Upload uses expo-file-system uploadAsync (streams from disk, never loads into JS memory).
  */
 import React, { createContext, useContext, useEffect, useState, useCallback } from 'react';
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import { Alert } from 'react-native';
 import { supabase, IS_DEMO_MODE, SUPABASE_URL, SUPABASE_ANON_KEY } from '../services/supabase';
 import { useAuth } from './useAuth';
 
@@ -29,82 +21,62 @@ export interface GalleryPhoto {
 }
 
 interface Ctx {
-  photos:    GalleryPhoto[];
-  loading:   boolean;
-  add:       (aquariumId: string, localUri: string, caption?: string, takenAt?: string) => Promise<GalleryPhoto | null>;
-  remove:    (photoId: string) => Promise<void>;
+  photos:      GalleryPhoto[];
+  loading:     boolean;
+  add:         (aquariumId: string, localUri: string, caption?: string, takenAt?: string) => Promise<GalleryPhoto | null>;
+  remove:      (photoId: string) => Promise<void>;
   forAquarium: (aquariumId: string) => GalleryPhoto[];
 }
 
 const GalleryCtx = createContext<Ctx | undefined>(undefined);
 const localKey = (uid: string) => `@aquamanager_gallery_${uid}`;
 
-const MAX_DIMENSION = 1200;
-const COMPRESS_QUALITY = 0.7;
+/* ── Upload a photo to Supabase Storage via native HTTP (no JS memory) ─── */
+async function nativeUpload(userId: string, aquariumId: string, fileUri: string): Promise<string> {
+  const storagePath = `${userId}/${aquariumId}/${Date.now()}.jpg`;
 
-async function compressImage(uri: string): Promise<string> {
-  try {
-    const IM = await import('expo-image-manipulator');
-    const manipulate = IM.manipulateAsync ?? (IM as any).default?.manipulateAsync;
-    const SaveFormat = IM.SaveFormat ?? (IM as any).default?.SaveFormat;
-    if (!manipulate) return uri;
-    const result = await manipulate(
-      uri,
-      [{ resize: { width: MAX_DIMENSION } }],
-      { compress: COMPRESS_QUALITY, format: SaveFormat?.JPEG },
-    );
-    return result.uri;
-  } catch (e) {
-    console.warn('[Gallery] compressImage fallback to original:', e);
-    return uri;
+  // Get auth token
+  const { data: sess } = await supabase.auth.getSession();
+  const token = sess?.session?.access_token ?? SUPABASE_ANON_KEY;
+
+  // Dynamic import expo-file-system
+  const FS = await import('expo-file-system');
+  const uploadAsync = FS.uploadAsync ?? (FS as any).default?.uploadAsync;
+  const UploadType  = (FS as any).FileSystemUploadType ?? (FS as any).default?.FileSystemUploadType;
+
+  if (!uploadAsync || !UploadType) {
+    throw new Error('expo-file-system uploadAsync no disponible');
   }
+
+  // Upload directly from disk → Supabase Storage REST API
+  const url = `${SUPABASE_URL}/storage/v1/object/posts/${storagePath}`;
+  const res = await uploadAsync(url, fileUri, {
+    httpMethod: 'POST',
+    uploadType: UploadType.BINARY_CONTENT,
+    headers: {
+      'Authorization': `Bearer ${token}`,
+      'apikey': SUPABASE_ANON_KEY,
+      'Content-Type': 'image/jpeg',
+      'x-upsert': 'false',
+    },
+  });
+
+  if (!res || res.status < 200 || res.status >= 300) {
+    let msg = `HTTP ${res?.status ?? 'unknown'}`;
+    try { const b = JSON.parse(res.body); msg = b.message ?? b.error ?? msg; } catch {}
+    throw new Error(msg);
+  }
+
+  return `${SUPABASE_URL}/storage/v1/object/public/posts/${storagePath}`;
 }
 
-async function uploadPhoto(userId: string, aquariumId: string, localUri: string): Promise<string> {
-  let step = 'compress';
-  try {
-    const compressedUri = await compressImage(localUri);
-    const path = `posts/${userId}/${aquariumId}/${Date.now()}.jpg`;
-
-    step = 'getSession';
-    const { data: sessionData } = await supabase.auth.getSession();
-    const token = sessionData?.session?.access_token ?? SUPABASE_ANON_KEY;
-
-    step = 'uploadAsync';
-    const FS = await import('expo-file-system');
-    const uploadAsync = FS.uploadAsync ?? (FS as any).default?.uploadAsync;
-    const UploadType = (FS as any).FileSystemUploadType ?? (FS as any).default?.FileSystemUploadType;
-
-    const uploadUrl = `${SUPABASE_URL}/storage/v1/object/${path}`;
-    const result = await uploadAsync(uploadUrl, compressedUri, {
-      httpMethod: 'POST',
-      uploadType: UploadType.BINARY_CONTENT,
-      headers: {
-        'Authorization': `Bearer ${token}`,
-        'apikey': SUPABASE_ANON_KEY,
-        'Content-Type': 'image/jpeg',
-        'x-upsert': 'false',
-      },
-    });
-
-    if (result.status < 200 || result.status >= 300) {
-      const body = result.body ? JSON.parse(result.body) : {};
-      throw new Error(body.message ?? body.error ?? `HTTP ${result.status}`);
-    }
-
-    step = 'getPublicUrl';
-    const publicUrl = `${SUPABASE_URL}/storage/v1/object/public/${path}`;
-    return publicUrl;
-  } catch (e: any) {
-    throw new Error(`[${step}] ${e?.message ?? String(e)}`);
-  }
-}
-
+/* ── Provider ──────────────────────────────────────────────────────────── */
 export function AquariumGalleryProvider({ children }: { children: React.ReactNode }) {
   const { user } = useAuth();
   const [photos,  setPhotos]  = useState<GalleryPhoto[]>([]);
   const [loading, setLoading] = useState(true);
 
+  // Load photos on mount
   useEffect(() => {
     if (!user) { setPhotos([]); setLoading(false); return; }
     setLoading(true);
@@ -114,15 +86,13 @@ export function AquariumGalleryProvider({ children }: { children: React.ReactNod
           const { data, error } = await supabase
             .from('aquarium_photos').select('*')
             .eq('user_id', user.id).order('taken_at', { ascending: false });
-          if (!error && data) {
-            setPhotos(data); setLoading(false); return;
-          }
-        } catch (e) { console.warn('[Gallery] Supabase load failed:', e); }
+          if (!error && data) { setPhotos(data); setLoading(false); return; }
+        } catch {}
       }
       try {
         const raw = await AsyncStorage.getItem(localKey(user.id));
         setPhotos(raw ? JSON.parse(raw) : []);
-      } catch (e) { console.warn('[Gallery] Local load failed:', e); setPhotos([]); }
+      } catch { setPhotos([]); }
       setLoading(false);
     })();
   }, [user?.id]);
@@ -130,26 +100,24 @@ export function AquariumGalleryProvider({ children }: { children: React.ReactNod
   const persistLocal = useCallback(async (next: GalleryPhoto[]) => {
     setPhotos(next);
     if (user) {
-      try { await AsyncStorage.setItem(localKey(user.id), JSON.stringify(next)); } catch (e) { console.warn('[Gallery] Local persist failed:', e); }
+      try { await AsyncStorage.setItem(localKey(user.id), JSON.stringify(next)); } catch {}
     }
   }, [user]);
 
+  // Add photo
   const add = useCallback(async (aquariumId: string, localUri: string, caption?: string, takenAt?: string): Promise<GalleryPhoto | null> => {
     if (!user) return null;
     const taken_at = takenAt ?? new Date().toISOString();
 
-    // Demo mode: save locally with the local file URI
+    // Demo mode → local only
     if (IS_DEMO_MODE) {
-      const newPhoto: GalleryPhoto = {
-        id: `g_${Date.now()}`, aquarium_id: aquariumId, image_url: localUri,
-        caption, taken_at,
-      };
-      await persistLocal([newPhoto, ...photos]);
-      return newPhoto;
+      const p: GalleryPhoto = { id: `g_${Date.now()}`, aquarium_id: aquariumId, image_url: localUri, caption, taken_at };
+      await persistLocal([p, ...photos]);
+      return p;
     }
 
-    // Production: upload to Supabase Storage (throws on failure)
-    const remoteUrl = await uploadPhoto(user.id, aquariumId, localUri);
+    // Production → upload to Storage, then insert row
+    const remoteUrl = await nativeUpload(user.id, aquariumId, localUri);
 
     const { data, error } = await supabase.from('aquarium_photos').insert({
       user_id: user.id, aquarium_id: aquariumId,
@@ -157,15 +125,15 @@ export function AquariumGalleryProvider({ children }: { children: React.ReactNod
     }).select().single();
 
     if (error || !data) throw new Error(error?.message ?? 'No se pudo guardar la foto');
-
     setPhotos(prev => [data, ...prev]);
     return data as GalleryPhoto;
   }, [user, photos, persistLocal]);
 
+  // Remove photo
   const remove = useCallback(async (photoId: string) => {
     if (!user) return;
     if (!IS_DEMO_MODE) {
-      try { await supabase.from('aquarium_photos').delete().eq('id', photoId); } catch (e) { console.warn('[Gallery] Supabase delete failed:', e); }
+      try { await supabase.from('aquarium_photos').delete().eq('id', photoId); } catch {}
     }
     await persistLocal(photos.filter(p => p.id !== photoId));
   }, [user, photos, persistLocal]);

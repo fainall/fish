@@ -50,8 +50,8 @@ export default function GalleryScreen({ navigation }: any) {
       Alert.alert('Permiso denegado', 'Sin acceso a ' + source); return;
     }
     const result = source === 'camera'
-      ? await ImagePicker.launchCameraAsync({ mediaTypes: ['images'], quality: 0.8 })
-      : await ImagePicker.launchImageLibraryAsync({ mediaTypes: ['images'], quality: 0.8 });
+      ? await ImagePicker.launchCameraAsync({ mediaTypes: ['images'], quality: 0.5 })
+      : await ImagePicker.launchImageLibraryAsync({ mediaTypes: ['images'], quality: 0.5 });
     if (!result.canceled && result.assets[0]?.uri) {
       setPendingUri(result.assets[0].uri);
       setCaption('');
