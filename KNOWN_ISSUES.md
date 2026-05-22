@@ -4,6 +4,26 @@
 
 ---
 
+## ✅ RESUELTOS (2026-05-22, OTA v8)
+
+### Crash al subir fotos a la galería ("pantalla en blanco")
+- **Causa A (código):** leer un `file://` URI crasheaba el runtime nativo con varios métodos (`fetch().blob()`, `atob()`, `XHR`, `FileSystem.uploadAsync`, `expo-image-manipulator`); y la API legacy de `expo-file-system` (`getInfoAsync`/`readAsStringAsync`) **lanza "deprecated" en SDK 54**.
+- **Solución:** API `File` de SDK 54 → `new File(uri).bytes()` → `supabase.storage.upload()`. En `useAquariumGallery.tsx`, `useCommunity.ts`, `AdminDashboardScreen.tsx`.
+- **Causa B (backend):** el bucket `posts` y la tabla `aquarium_photos` no existían. `migration.sql` usaba `CREATE POLICY IF NOT EXISTS` (sintaxis inválida en PostgreSQL) que abortaba y revertía toda la migración.
+- **Solución:** `supabase/storage_setup.sql` (idempotente) + `migration.sql` corregido.
+
+> ⚠️ **SETUP OBLIGATORIO EN CUALQUIER ENTORNO SUPABASE NUEVO:**
+> Ejecutar `supabase/storage_setup.sql` en el SQL Editor. Sin esto, TODA subida de imágenes (galería, comunidad, peces admin) falla con **"Bucket not found"**. Verificar con:
+> `SELECT id, public FROM storage.buckets;` → debe listar `posts`.
+
+### Reglas de plataforma aprendidas (NO reintroducir)
+- ❌ NO usar `expo-image-manipulator` (crash nativo en este build).
+- ❌ NO usar `FileSystem.uploadAsync`, `getInfoAsync`, `readAsStringAsync` (legacy, fallan en SDK 54).
+- ❌ NO leer archivos locales con `fetch()`, `atob()` ni `XMLHttpRequest`.
+- ✅ Para leer/subir archivos: `new File(uri).bytes()` (API `File` de SDK 54).
+
+---
+
 ## CRÍTICOS (afectan experiencia de usuario en producción)
 
 ### 1. ChatScreen — IA completamente simulada

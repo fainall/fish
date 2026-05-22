@@ -4,12 +4,32 @@ Todas las mejoras, features y bugfixes documentados por versión.
 
 ---
 
-## [Unreleased] — 2026-05-22
+## [1.0.0] — 2026-05-22 (OTA v8)
 
-### Bug Fixes
-- **Fix crash al subir fotos a galería** — `fetch(localUri).blob()` no funciona en React Native para URIs locales; reemplazado por `fetch().arrayBuffer()` que es nativo y eficiente. Aplicado en 3 archivos: `useAquariumGallery.tsx`, `useCommunity.ts`, `AdminDashboardScreen.tsx`.
-- **Upload silencioso ya no inserta URLs rotas** — Si el upload a Supabase Storage falla, `add()` ahora lanza error visible al usuario en vez de guardar un `file://` URI roto en la base de datos.
-- **Modo demo maneja galería correctamente** — En demo mode se salta el upload y guarda localmente con URI local como fallback explícito.
+### Bug Fixes — Subida de fotos (RESUELTO ✅)
+El crash de "pantalla en blanco" al subir fotos tenía **dos causas independientes** (código + backend), ambas resueltas:
+
+**Causa A — Lectura del archivo local (crash nativo):**
+Varios métodos para leer un `file://` URI crasheaban el runtime nativo (incatchable por try/catch JS). Descartados uno a uno:
+  - `fetch(uri).blob()` / `fetch(uri).arrayBuffer()` — RN no lee URIs locales con fetch.
+  - `atob()` sobre base64 grande — crashea Hermes por memoria.
+  - `XMLHttpRequest` responseType arraybuffer — no lee URIs locales.
+  - `FileSystem.uploadAsync` — crash nativo.
+  - `expo-image-manipulator` — crash nativo.
+  - `FileSystem.getInfoAsync` / `readAsStringAsync` (API legacy) — **lanzan "deprecated" en SDK 54**.
+  - **SOLUCIÓN:** API `File` de expo-file-system SDK 54 → `new File(uri).bytes()` lee a `Uint8Array` nativamente y se sube directo con `supabase.storage.upload()`. Aplicado en `useAquariumGallery.tsx`, `useCommunity.ts`, `AdminDashboardScreen.tsx`.
+  - `expo-file-system` agregado como dependencia directa en `package.json`.
+  - `confirmUpload` aislado del ciclo de render con `setTimeout`.
+
+**Causa B — Backend nunca configurado ("Bucket not found"):**
+  - `supabase/migration.sql` usaba `CREATE POLICY IF NOT EXISTS` (sintaxis **inválida** en PostgreSQL). El error abortaba la transacción y revertía TODO → el bucket `posts` y la tabla `aquarium_photos` nunca se crearon.
+  - **SOLUCIÓN:** nuevo `supabase/storage_setup.sql` idempotente que crea tabla + bucket + políticas. `migration.sql` corregido (`DROP POLICY IF EXISTS` + `CREATE`).
+  - Política de INSERT corregida: valida solo `bucket_id` (el admin sube a `fish/`, no a `uid/`).
+
+### Otros Bug Fixes
+- **Upload silencioso ya no inserta URLs rotas** — Si el upload falla, `add()` lanza error visible en vez de guardar un `file://` roto en la BD.
+- **Botón "Buscar actualizaciones" robusto** — `checkForUpdateAsync` fallido ya no muestra error técnico crudo; mensaje amable + opción de reiniciar, y guarda `__DEV__`.
+- **Modo demo maneja galería correctamente** — En demo se salta el upload y guarda localmente.
 
 ### Documentation
 - **ARCHITECTURE.md** — Documentación completa: estructura de archivos, navegación, tablas Supabase, design system, dependencias, tipos.
