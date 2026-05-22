@@ -388,19 +388,33 @@ export default function ProfileScreen({ onClose, navigation }: Props) {
             <View style={styles.actionDivider} />
 
             <TouchableOpacity style={styles.actionRow} onPress={async () => {
+              if (__DEV__) {
+                Alert.alert('Modo desarrollo', 'Las actualizaciones OTA solo están disponibles en la app publicada.');
+                return;
+              }
               try {
                 Alert.alert('Buscando actualización…', 'Espera un momento');
                 const result = await Updates.checkForUpdateAsync();
                 if (result.isAvailable) {
                   await Updates.fetchUpdateAsync();
                   Alert.alert('✅ Actualización descargada', 'La app se reiniciará ahora con los cambios.', [
-                    { text: 'OK', onPress: () => Updates.reloadAsync() },
+                    { text: 'OK', onPress: () => Updates.reloadAsync().catch(() => {}) },
                   ]);
                 } else {
-                  Alert.alert('Al día', `Ya tienes la última versión.\n\nUpdate ID: ${Updates.updateId ?? 'embedded (build inicial)'}`);
+                  Alert.alert('Al día', 'Ya tienes la última versión instalada.');
                 }
               } catch (e: any) {
-                Alert.alert('Error', e?.message ?? 'No se pudo verificar.');
+                // checkForUpdateAsync puede fallar por red intermitente o por
+                // una comprobación concurrente al arrancar. Mensaje amable +
+                // opción de reiniciar (por si ya se descargó al abrir la app).
+                Alert.alert(
+                  'No se pudo verificar ahora',
+                  'Revisa tu conexión e inténtalo de nuevo. Si ya se descargó una actualización al abrir la app, reiniciar la aplicará.',
+                  [
+                    { text: 'Cerrar', style: 'cancel' },
+                    { text: 'Reiniciar app', onPress: () => Updates.reloadAsync().catch(() => {}) },
+                  ],
+                );
               }
             }}>
               <View style={[styles.actionIcon, { backgroundColor: COLORS.primary + '20' }]}>
