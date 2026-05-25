@@ -33,6 +33,27 @@ const pill = StyleSheet.create({
   text: { color: '#fff', fontWeight: '700', fontFamily: FONTS.sansBd },
 });
 
+// ── Ficha completeness (% of key fields filled) ───────────────────────────────
+const COMPLETENESS_FIELDS = [
+  'common_name', 'scientific_name', 'family', 'origin', 'habitat', 'adult_size_cm', 'lifespan_years',
+  'temp_min', 'temp_max', 'ph_min', 'ph_max', 'gh_min', 'gh_max', 'water_level', 'min_tank_liters',
+  'diet', 'food_types', 'description', 'water_type', 'difficulty', 'breeding_method',
+  'sexual_dimorphism', 'compatible_with', 'image_url',
+] as const;
+function fishCompleteness(f: any): number {
+  const filled = COMPLETENESS_FIELDS.filter(k => {
+    const v = f?.[k];
+    if (Array.isArray(v)) return v.length > 0;
+    if (typeof v === 'number') return !isNaN(v);
+    if (typeof v === 'boolean') return true;
+    return v != null && String(v).trim() !== '';
+  }).length;
+  return Math.round((filled / COMPLETENESS_FIELDS.length) * 100);
+}
+function completenessColor(pct: number): string {
+  return pct >= 80 ? COLORS.success : pct >= 50 ? COLORS.warning : COLORS.error;
+}
+
 // ── Component ─────────────────────────────────────────────────────────────────
 export default function AdminDashboardScreen() {
   const { height: winH } = useWindowDimensions();
@@ -52,17 +73,20 @@ export default function AdminDashboardScreen() {
   const [isNewFish,   setIsNewFish]   = useState(false);
   const [pickingImg,  setPickingImg]  = useState(false);
 
-  const [userCount, setUserCount] = useState<number | null>(null);
+  const [userCount,     setUserCount]     = useState<number | null>(null);
+  const [postCount,     setPostCount]     = useState<number | null>(null);
+  const [aquariumCount, setAquariumCount] = useState<number | null>(null);
   useEffect(() => {
-    if (IS_DEMO_MODE) { setUserCount(1); return; }
-    (async () => {
+    if (IS_DEMO_MODE) { setUserCount(1); setPostCount(0); setAquariumCount(0); return; }
+    const fetchCount = async (table: string, setter: (n: number) => void) => {
       try {
-        const { count, error } = await supabase
-          .from('users')
-          .select('*', { count: 'exact', head: true });
-        if (!error && count !== null) setUserCount(count);
-      } catch (e) { console.warn('[AdminDash] User count failed:', e); }
-    })();
+        const { count, error } = await supabase.from(table).select('*', { count: 'exact', head: true });
+        if (!error && count !== null) setter(count);
+      } catch (e) { console.warn(`[AdminDash] ${table} count failed:`, e); }
+    };
+    fetchCount('users', setUserCount);
+    fetchCount('posts', setPostCount);
+    fetchCount('aquariums', setAquariumCount);
   }, []);
 
   const [selectedSugg,       setSelectedSugg]       = useState<FishSuggestion | null>(null);
@@ -302,10 +326,15 @@ export default function AdminDashboardScreen() {
           <Text style={S.sectionTitle}>Resumen</Text>
           <View style={S.statsGrid}>
             {[
-              { label: 'Usuarios',       value: userCount === null ? '…' : `${userCount}`, icon: 'people-outline',      color: COLORS.primary },
-              { label: 'Conversaciones', value: `${conversations.length}`,        icon: 'chatbubbles-outline', color: COLORS.accent },
+              { label: 'Usuarios',       value: userCount === null ? '…' : `${userCount}`, icon: 'people-outline', color: COLORS.primary },
+              { label: 'Posts',          value: postCount === null ? '…' : `${postCount}`, icon: 'newspaper-outline', color: COLORS.accent },
+              { label: 'Acuarios',       value: aquariumCount === null ? '…' : `${aquariumCount}`, icon: 'cube-outline', color: COLORS.primary },
+              { label: 'Especies',       value: `${fishList.length}`, icon: 'fish-outline', color: COLORS.success },
+              { label: 'Aprobadas',      value: `${fishList.filter(f => f.approved).length}`, icon: 'checkmark-circle-outline', color: COLORS.success },
+              { label: 'Ocultas',        value: `${fishList.filter(f => !f.approved).length}`, icon: 'eye-off-outline', color: COLORS.warning },
+              { label: 'Ficha media',    value: fishList.length ? `${Math.round(fishList.reduce((a, f) => a + fishCompleteness(f), 0) / fishList.length)}%` : '—', icon: 'stats-chart-outline', color: COLORS.accent },
+              { label: 'Conversaciones', value: `${conversations.length}`, icon: 'chatbubbles-outline', color: COLORS.accent },
               { label: 'Sin responder',  value: `${conversations.filter(c => c.unread > 0).length}`, icon: 'time-outline', color: COLORS.warning },
-              { label: 'Especies',       value: `${fishList.length}`,             icon: 'fish-outline',        color: COLORS.success },
             ].map(s => (
               <View key={s.label} style={S.statCard}>
                 <View style={[S.statIcon, { backgroundColor: s.color + '18' }]}>
@@ -453,7 +482,10 @@ export default function AdminDashboardScreen() {
             </View>
             <Text style={S.listMeta}>{filteredFish.length} / {fishList.length} especies</Text>
 
-            {filteredFish.map(item => (
+            {filteredFish.map(item => {
+              const pct = fishCompleteness(item);
+              const pc = completenessColor(pct);
+              return (
               <View key={item.id} style={S.fishCard}>
                 {item.image_url
                   ? <Image source={{ uri: item.image_url }} style={S.fishThumb} resizeMode="cover" />
@@ -463,8 +495,15 @@ export default function AdminDashboardScreen() {
                   <Text style={S.fishName} numberOfLines={1}>{item.common_name}</Text>
                   <Text style={S.fishSci} numberOfLines={1}>{item.scientific_name}</Text>
                   <View style={S.fishPills}>
+                    <View style={[S.pill, { backgroundColor: pc + '1f' }]}>
+                      <Text style={[S.pillText, { color: pc }]}>{pct}% ficha</Text>
+                    </View>
                     <View style={S.pill}><Text style={S.pillText}>{item.temp_min}–{item.temp_max}°C</Text></View>
-                    <View style={S.pill}><Text style={S.pillText}>pH {item.ph_min}–{item.ph_max}</Text></View>
+                    {!item.approved && (
+                      <View style={[S.pill, { backgroundColor: COLORS.warning + '1f' }]}>
+                        <Text style={[S.pillText, { color: COLORS.warning }]}>Oculto</Text>
+                      </View>
+                    )}
                   </View>
                 </View>
                 <View style={{ gap: 6 }}>
@@ -476,7 +515,8 @@ export default function AdminDashboardScreen() {
                   </TouchableOpacity>
                 </View>
               </View>
-            ))}
+              );
+            })}
 
             <TouchableOpacity style={S.resetBtn}
               onPress={() => {

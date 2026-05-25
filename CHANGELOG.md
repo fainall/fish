@@ -4,7 +4,12 @@ Todas las mejoras, features y bugfixes documentados por versión.
 
 ---
 
-## [1.0.0] — 2026-05-25 (OTA v9–v14)
+## [1.0.0] — 2026-05-25 (OTA v9–v15)
+
+### Panel de administrador — completitud y estadísticas (v15)
+- **Indicador de completitud de ficha** — Cada especie en la lista del admin muestra un badge de % (verde ≥80, ámbar ≥50, rojo <50) según cuántos campos clave de la ficha están llenos, para detectar de un vistazo las fichas incompletas. Helper `fishCompleteness()`.
+- **Badge "Oculto"** — Las especies no aprobadas se marcan en la lista (no aparecen en el catálogo público).
+- **Dashboard ampliado** — El resumen ahora incluye Posts, Acuarios, Especies aprobadas, Ocultas y "Ficha media" (completitud promedio del catálogo), además de Usuarios y Conversaciones. Conteos de posts/acuarios traídos de Supabase con `count: 'exact'`.
 
 ### Panel de administrador — editor de especies completo (v14)
 - **Editor de peces ampliado a la ficha completa (~40 campos)** — Antes solo se editaban ~15 campos. Ahora el editor cubre todas las secciones del modelo `Fish`: Identidad (subfamilia, hábitat, otros nombres), Físico (tamaño juvenil, vida, litros ideal), Parámetros avanzados (KH, TDS), Hábitat y preferencias (nivel de nado, dificultad, corriente, luz, sustrato, plantas, troncos, escondites, sal), Dieta y comportamiento (tipos de alimento, frecuencia, actividad, notas), Reproducción (método, dificultad, dimorfismo, notas), Compatibilidad (compatible/evitar), Salud (enfermedades), Conservación (IUCN, origen, CITES) y Variantes/morfos.
