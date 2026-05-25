@@ -1,9 +1,13 @@
 import React, { createContext, useContext, useEffect, useState } from 'react';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { supabase, IS_DEMO_MODE } from '../services/supabase';
+import { withTimeout } from '../utils/withTimeout';
 import { ExperienceLevel } from '../constants/tips';
 import { WaterType, AquariumStyle } from '../types';
 import { useAuth } from './useAuth';
+
+// Max wait for the profile network fetch before falling back to local cache.
+const PROFILE_NET_TIMEOUT_MS = 6000;
 
 export interface AquariumProfile {
   length_cm: number; width_cm: number; height_cm: number;
@@ -93,14 +97,21 @@ export function UserProfileProvider({ children }: { children: React.ReactNode })
 
   useEffect(() => {
     if (!user) { setProfile(DEFAULT_PROFILE); setLoading(false); return; }
+    let mounted = true;
     setLoading(true);
+
+    // Safety net: never let the splash hang on a stalled profile fetch.
+    const safety = setTimeout(() => { if (mounted) setLoading(false); }, PROFILE_NET_TIMEOUT_MS + 2000);
 
     const load = async () => {
       // ── 1. Intentar cargar desde Supabase (fuente de verdad) ──────────
       if (!IS_DEMO_MODE) {
         try {
-          const { data, error } = await supabase
-            .from('user_profiles').select('*').eq('id', user.id).single();
+          const { data, error } = await withTimeout(
+            (async () => supabase.from('user_profiles').select('*').eq('id', user.id).single())(),
+            PROFILE_NET_TIMEOUT_MS,
+            { data: null, error: null } as any,
+          );
 
           if (!error && data) {
             const remote = rowToProfile(data);
@@ -120,10 +131,11 @@ export function UserProfileProvider({ children }: { children: React.ReactNode })
             if (localRaw) {
               const local: UserProfile = JSON.parse(localRaw);
               if (local.onboarding_completed) {
-                // Local tiene onboarding completado pero Supabase no → sincronizar hacia arriba
-                await syncToSupabase(local, user.id);
+                // Local tiene onboarding completado pero Supabase no → mostrar local YA
+                // y sincronizar hacia arriba en segundo plano (sin bloquear el arranque).
                 setProfile(local);
                 setLoading(false);
+                syncToSupabase(local, user.id).catch(() => {});
                 return;
               }
             }
@@ -134,13 +146,10 @@ export function UserProfileProvider({ children }: { children: React.ReactNode })
             return;
           }
 
-          // No hay fila en Supabase → crear una vacía
+          // No hay fila en Supabase → crear una vacía (sin bloquear el arranque)
           if (error?.code === 'PGRST116') { // "no rows returned"
-            try {
-              await supabase.from('user_profiles')
-                .insert({ id: user.id })
-                .select().single();
-            } catch (e) { console.warn('[UserProfile] Supabase insert row failed:', e); }
+            supabase.from('user_profiles').insert({ id: user.id }).select().single()
+              .then(() => {}, (e) => console.warn('[UserProfile] Supabase insert row failed:', e));
           }
         } catch (e) { console.warn('[UserProfile] Supabase load failed:', e); }
       }
@@ -160,10 +169,12 @@ export function UserProfileProvider({ children }: { children: React.ReactNode })
           setProfile(DEFAULT_PROFILE);
         }
       } catch (e) { console.warn('[UserProfile] Local fallback load failed:', e); setProfile(DEFAULT_PROFILE); }
-      setLoading(false);
+      if (mounted) setLoading(false);
     };
 
-    load();
+    load().finally(() => clearTimeout(safety));
+
+    return () => { mounted = false; clearTimeout(safety); };
   }, [user?.id]);
 
   // ── Sync helper: empujar perfil local a Supabase ──────────────────────────

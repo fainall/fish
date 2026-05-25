@@ -2,7 +2,12 @@ import React, { createContext, useContext, useEffect, useState } from 'react';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { supabase, IS_DEMO_MODE } from '../services/supabase';
 import { identifyUser, clearUser as sentryClearUser } from '../services/sentry';
+import { withTimeout } from '../utils/withTimeout';
 import { User } from '../types';
+
+// Max time to wait for network during cold-boot before falling back to the
+// locally cached session. Prevents the splash from hanging forever.
+const BOOT_NET_TIMEOUT_MS = 6000;
 
 const SESSION_KEY     = '@aquamanager_session';
 const REGISTERED_KEY  = '@aquamanager_registered_users';
@@ -47,19 +52,24 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   useEffect(() => {
     let mounted = true;
 
+    // Safety net: never let the splash hang. Even if every async path below
+    // stalls, force loading=false so the app renders (Login or cached user).
+    const safety = setTimeout(() => { if (mounted) setLoading(false); }, BOOT_NET_TIMEOUT_MS + 2000);
+
     const init = async () => {
-      // 1. Supabase session (modo real)
+      // 1. Supabase session (modo real) — con timeout para no colgar el arranque
       if (!IS_DEMO_MODE) {
         try {
-          const { data: { session } } = await supabase.auth.getSession();
+          const sessionRes = await withTimeout(supabase.auth.getSession(), BOOT_NET_TIMEOUT_MS, null as any);
+          const session = sessionRes?.data?.session;
           if (session?.user) {
-            const profile = await fetchProfile(session.user.id);
+            const profile = await withTimeout(fetchProfile(session.user.id), BOOT_NET_TIMEOUT_MS, null);
             if (profile && mounted) { setUser(profile); setLoading(false); return; }
           }
         } catch (e) { console.warn('[Auth] Supabase session check failed:', e); }
       }
 
-      // 2. Sesión local (AsyncStorage)
+      // 2. Sesión local (AsyncStorage) — fallback si la red falló o se agotó
       try {
         const raw = await AsyncStorage.getItem(SESSION_KEY);
         if (raw && mounted) setUser(JSON.parse(raw));
@@ -68,7 +78,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       if (mounted) setLoading(false);
     };
 
-    init();
+    init().finally(() => clearTimeout(safety));
 
     // Listener de cambio de sesión Supabase
     if (!IS_DEMO_MODE) {
