@@ -8,6 +8,7 @@ import { FishImage as Image } from '../../components/FishImage';
 import { LinearGradient } from 'expo-linear-gradient';
 import Animated, { FadeInDown, FadeOut, Layout } from 'react-native-reanimated';
 import { Ionicons } from '@expo/vector-icons';
+import { confirmAction } from '../../utils/confirm';
 import * as ImagePicker from 'expo-image-picker';
 import { COLORS, FONTS, SPACING, BORDER_RADIUS as RADII } from '../../constants/theme';
 import { Post, PostComment } from '../../types';
@@ -158,10 +159,11 @@ interface CommentsModalProps {
   visible: boolean;
   onClose: () => void;
   onAddComment: (postId: string, text: string) => void;
+  onDeleteComment: (postId: string, commentId: string) => void;
 }
 
 function CommentsModal({
-  post, comments, currentUserId, currentUserName, visible, onClose, onAddComment,
+  post, comments, currentUserId, currentUserName, visible, onClose, onAddComment, onDeleteComment,
 }: CommentsModalProps) {
   const [text, setText] = useState('');
 
@@ -211,6 +213,20 @@ function CommentsModal({
                   <Text style={styles.commentText}>{item.content}</Text>
                   <Text style={styles.commentTime}>{timeAgo(item.created_at)}</Text>
                 </View>
+                {item.user_id === currentUserId && (
+                  <TouchableOpacity
+                    style={styles.commentDeleteBtn}
+                    hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
+                    onPress={() => confirmAction(
+                      'Eliminar comentario',
+                      '¿Eliminar este comentario? Esta acción no se puede deshacer.',
+                      () => onDeleteComment(post.id, item.id),
+                      'Eliminar',
+                    )}
+                  >
+                    <Ionicons name="trash-outline" size={15} color={COLORS.textMuted} />
+                  </TouchableOpacity>
+                )}
               </View>
             )}
           />
@@ -523,7 +539,7 @@ export default function CommunityScreen() {
 
   const {
     posts, comments, loading, loadingMore, hasMore,
-    toggleLike, loadComments, addComment, createPost, reload, loadMore,
+    toggleLike, loadComments, addComment, deleteComment, createPost, reload, loadMore,
   } = useCommunity();
 
   const { unlocked, unlock } = useAchievements();
@@ -799,6 +815,7 @@ export default function CommunityScreen() {
         visible={showComments}
         onClose={() => setShowComments(false)}
         onAddComment={handleAddComment}
+        onDeleteComment={deleteComment}
       />
 
       <CreatePostModal
@@ -931,6 +948,7 @@ const styles = StyleSheet.create({
   commentUser: { fontSize: 13, fontWeight: '600', color: COLORS.text, marginBottom: 3, fontFamily: FONTS.sansSb },
   commentText: { fontSize: 14, color: COLORS.text, lineHeight: 20, fontFamily: FONTS.sans },
   commentTime: { fontSize: 11, color: COLORS.textMuted, marginTop: 4, fontFamily: FONTS.sans },
+  commentDeleteBtn: { padding: 6, alignSelf: 'flex-start', marginTop: 2 },
 
   emptyComments: { textAlign: 'center', color: COLORS.textMuted, marginTop: 32, fontSize: 14, fontFamily: FONTS.sans },
 

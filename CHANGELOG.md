@@ -4,7 +4,10 @@ Todas las mejoras, features y bugfixes documentados por versión.
 
 ---
 
-## [1.0.0] — 2026-05-25 (OTA v9–v12)
+## [1.0.0] — 2026-05-25 (OTA v9–v13)
+
+### Nuevas funciones (v13)
+- **Eliminar comentario propio en la comunidad** — En el modal de comentarios, cada usuario ve un botón de papelera solo en SUS comentarios; al tocarlo pide confirmación y borra (optimista) actualizando el contador. Nueva función `deleteComment` en `useCommunity.ts` + política RLS `comments_delete` (`supabase/comment_delete_policy.sql`, también en `migration.sql`) que permite borrar únicamente el comentario propio (`auth.uid() = user_id`).
 
 ### Estabilidad de arranque (v9)
 - **Fix "la app a veces no abre a la primera"** — Llamadas de red sin timeout en `useAuth` (`getSession`, `fetchProfile`) y `useUserProfile` colgaban la pantalla de splash para siempre en arranques con red lenta/fría. Añadido `withTimeout` (6s) con fallback a la caché local + red de seguridad (8s) que garantiza que la splash nunca se quede colgada. Nuevo util `src/utils/withTimeout.ts`. Sincronizaciones a Supabase movidas a segundo plano.

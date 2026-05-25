@@ -283,6 +283,25 @@ export function useCommunity() {
     }
   }, [user, uid]);
 
+  // ── deleteComment (solo el propio) ───────────────────────────────────────────
+  const deleteComment = useCallback(async (postId: string, commentId: string) => {
+    // Optimistic: quitar de la lista y decrementar el contador
+    setComments(prev => ({
+      ...prev,
+      [postId]: (prev[postId] ?? []).filter(c => c.id !== commentId),
+    }));
+    setPosts(prev => prev.map(p =>
+      p.id === postId ? { ...p, comments_count: Math.max(0, p.comments_count - 1) } : p
+    ));
+
+    if (!IS_DEMO_MODE) {
+      try {
+        // RLS garantiza que solo el dueño puede borrar (auth.uid() = user_id)
+        await supabase.from('post_comments').delete().eq('id', commentId);
+      } catch (e) { console.warn('[Community] deleteComment failed:', e); }
+    }
+  }, []);
+
   // ── createPost ─────────────────────────────────────────────────────────────
   const createPost = useCallback(async (content: string, localImageUri: string, tags: string[], achievementId?: string) => {
     if (!user || creating) return;
@@ -342,6 +361,6 @@ export function useCommunity() {
 
   return {
     posts, comments, loading, loadingMore, hasMore, creating,
-    toggleLike, loadComments, addComment, createPost, reload, loadMore,
+    toggleLike, loadComments, addComment, deleteComment, createPost, reload, loadMore,
   };
 }

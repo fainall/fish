@@ -318,6 +318,10 @@ DROP POLICY IF EXISTS "comments_insert" ON public.post_comments;
 CREATE POLICY "comments_insert" ON public.post_comments
   FOR INSERT TO authenticated WITH CHECK (auth.uid() = user_id);
 
+DROP POLICY IF EXISTS "comments_delete" ON public.post_comments;
+CREATE POLICY "comments_delete" ON public.post_comments
+  FOR DELETE TO authenticated USING (auth.uid() = user_id);
+
 -- ─── 14. Vista: posts con conteo de comentarios y likes ──────────────────────
 CREATE OR REPLACE VIEW public.posts_with_counts AS
 SELECT
