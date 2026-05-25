@@ -116,19 +116,21 @@ export default function GalleryScreen({ navigation }: any) {
 
       {/* Aquarium selector */}
       {aquariums.length > 1 && (
-        <ScrollView horizontal showsHorizontalScrollIndicator={false}
-          style={S.aqSelector}
-          contentContainerStyle={{ gap: 8, paddingHorizontal: SPACING.md, paddingBottom: SPACING.sm, alignItems: 'center' }}>
-          {aquariums.map(aq => (
-            <TouchableOpacity key={aq.id}
-              style={[S.aqChip, selectedAquarium.id === aq.id && S.aqChipOn]}
-              onPress={() => selectAquarium(aq.id)}>
-              <Text style={[S.aqChipText, selectedAquarium.id === aq.id && S.aqChipTextOn]}>
-                {aq.name}
-              </Text>
-            </TouchableOpacity>
-          ))}
-        </ScrollView>
+        <View style={S.aqSelectorWrap}>
+          <ScrollView horizontal showsHorizontalScrollIndicator={false}
+            style={S.aqSelector}
+            contentContainerStyle={{ gap: 8, paddingHorizontal: SPACING.md, alignItems: 'center' }}>
+            {aquariums.map(aq => (
+              <TouchableOpacity key={aq.id}
+                style={[S.aqChip, selectedAquarium.id === aq.id && S.aqChipOn]}
+                onPress={() => selectAquarium(aq.id)}>
+                <Text style={[S.aqChipText, selectedAquarium.id === aq.id && S.aqChipTextOn]} numberOfLines={1}>
+                  {aq.name}
+                </Text>
+              </TouchableOpacity>
+            ))}
+          </ScrollView>
+        </View>
       )}
 
       {/* Add buttons */}
@@ -251,9 +253,13 @@ const S = StyleSheet.create({
   title:    { fontSize: 18, fontWeight: '700', color: COLORS.text, fontFamily: FONTS.sansBd, textAlign: 'center' },
   subtitle: { fontSize: 11, color: COLORS.textMuted, marginTop: 1, fontFamily: FONTS.sans, textAlign: 'center' },
 
+  // Fixed-height wrapper so the horizontal ScrollView can NEVER stretch the
+  // chips to full screen height (native ignores flexGrow:0 alone here).
+  aqSelectorWrap: { height: 44, marginBottom: SPACING.sm },
   aqSelector: { flexGrow: 0, flexShrink: 0 },
   aqChip: {
-    paddingHorizontal: 14, paddingVertical: 8, borderRadius: 16,
+    height: 36, justifyContent: 'center', alignItems: 'center',
+    paddingHorizontal: 14, borderRadius: 16,
     backgroundColor: COLORS.backgroundCard, borderWidth: 1, borderColor: COLORS.border,
   },
   aqChipOn:    { backgroundColor: COLORS.primary, borderColor: COLORS.primary },
