@@ -136,6 +136,71 @@ export default function AdminDashboardScreen() {
     setEditingFish(prev => prev ? { ...prev, [field]: value } : prev);
   }
 
+  // ── Editor field render helpers (called inline → no input focus loss) ────────
+  const ef = editingFish;
+  const txtField = (label: string, field: keyof EditableFish, multiline = false) => (
+    <View style={S.fieldRow} key={field}>
+      <Text style={S.fieldLabel}>{label}</Text>
+      <TextInput
+        style={[S.fieldInput, multiline && { minHeight: 70, textAlignVertical: 'top' }]}
+        value={String(ef?.[field] ?? '')}
+        onChangeText={v => patch(field, v)}
+        placeholder={label} placeholderTextColor={COLORS.textMuted}
+        multiline={multiline}
+      />
+    </View>
+  );
+  const arrField = (label: string, field: keyof EditableFish, placeholder = 'Separar por comas') => (
+    <View style={S.fieldRow} key={field}>
+      <Text style={S.fieldLabel}>{label}</Text>
+      <TextInput
+        style={S.fieldInput}
+        value={Array.isArray(ef?.[field]) ? (ef![field] as any[]).join(', ') : ''}
+        onChangeText={v => patch(field, v.split(',').map(s => s.trim()).filter(Boolean))}
+        placeholder={placeholder} placeholderTextColor={COLORS.textMuted}
+      />
+    </View>
+  );
+  const toggleField = (label: string, field: keyof EditableFish) => {
+    const on = !!ef?.[field];
+    return (
+      <View style={S.toggleRow} key={field}>
+        <Text style={S.fieldLabel}>{label}</Text>
+        <TouchableOpacity style={[S.toggle, on && S.toggleOn]} onPress={() => patch(field, !on)}>
+          <View style={[S.toggleThumb, on && S.toggleThumbOn]} />
+        </TouchableOpacity>
+      </View>
+    );
+  };
+  const enumChips = (label: string, field: keyof EditableFish, options: { value: any; label: string }[]) => (
+    <View style={S.fieldRow} key={field}>
+      <Text style={S.fieldLabel}>{label}</Text>
+      <View style={S.chipRow}>
+        {options.map(opt => {
+          const on = ef?.[field] === opt.value;
+          return (
+            <TouchableOpacity key={String(opt.value)} style={[S.chip, on && S.chipOn]} onPress={() => patch(field, opt.value)}>
+              <Text style={[S.chipText, on && S.chipTextOn]}>{opt.label}</Text>
+            </TouchableOpacity>
+          );
+        })}
+      </View>
+    </View>
+  );
+  const numGrid = (fields: { label: string; field: keyof EditableFish }[]) => (
+    <View style={S.paramGrid}>
+      {fields.map(({ label, field }) => (
+        <View key={field} style={S.paramField}>
+          <Text style={S.paramLabel}>{label}</Text>
+          <TextInput style={[S.fieldInput, { textAlign: 'center' }]}
+            value={ef?.[field] != null ? String(ef[field]) : ''}
+            onChangeText={v => patch(field, v === '' ? undefined : (parseFloat(v) || 0))}
+            keyboardType="decimal-pad" placeholder="—" placeholderTextColor={COLORS.textMuted} />
+        </View>
+      ))}
+    </View>
+  );
+
   async function uploadFishImage(localUri: string): Promise<string | null> {
     if (IS_DEMO_MODE) return localUri; // demo mode: keep local URI
     try {
@@ -792,6 +857,109 @@ export default function AdminDashboardScreen() {
                       keyboardType="number-pad" placeholder="6" placeholderTextColor={COLORS.textMuted} />
                   </View>
                 )}
+
+                {/* Identidad extendida */}
+                <Text style={S.sheetSection}>🪪 Identidad</Text>
+                {txtField('Subfamilia / tribu', 'subfamily')}
+                {txtField('Hábitat específico', 'habitat')}
+                {arrField('Otros nombres', 'alt_names', 'Tetra neón, Cardenal...')}
+
+                {/* Físico */}
+                <Text style={S.sheetSection}>📏 Físico</Text>
+                {numGrid([
+                  { label: 'Tam. juvenil cm', field: 'juvenile_size_cm' },
+                  { label: 'Vida (años)',     field: 'lifespan_years' },
+                  { label: 'Litros ideal',    field: 'ideal_tank_liters' },
+                ])}
+
+                {/* Parámetros avanzados */}
+                <Text style={S.sheetSection}>🧪 Parámetros avanzados</Text>
+                {numGrid([
+                  { label: 'KH mín',  field: 'kh_min' },
+                  { label: 'KH máx',  field: 'kh_max' },
+                  { label: 'TDS mín', field: 'tds_min' },
+                  { label: 'TDS máx', field: 'tds_max' },
+                ])}
+
+                {/* Hábitat y preferencias */}
+                <Text style={S.sheetSection}>🪸 Hábitat y preferencias</Text>
+                {enumChips('Nivel de nado', 'water_level', [
+                  { value: 'top', label: 'Superior' }, { value: 'middle', label: 'Medio' },
+                  { value: 'bottom', label: 'Fondo' }, { value: 'all', label: 'Todo' },
+                ])}
+                {enumChips('Dificultad', 'difficulty', [
+                  { value: 'beginner', label: 'Principiante' }, { value: 'intermediate', label: 'Intermedio' },
+                  { value: 'advanced', label: 'Avanzado' }, { value: 'expert', label: 'Experto' },
+                ])}
+                {enumChips('Corriente', 'flow_preference', [
+                  { value: 'still', label: 'Nula' }, { value: 'gentle', label: 'Suave' },
+                  { value: 'moderate', label: 'Moderada' }, { value: 'strong', label: 'Fuerte' },
+                ])}
+                {enumChips('Luz', 'light_preference', [
+                  { value: 'dim', label: 'Tenue' }, { value: 'moderate', label: 'Media' }, { value: 'bright', label: 'Intensa' },
+                ])}
+                {enumChips('Sustrato', 'substrate_preference', [
+                  { value: 'sand', label: 'Arena' }, { value: 'fine-gravel', label: 'Grava fina' },
+                  { value: 'gravel', label: 'Grava' }, { value: 'bare-bottom', label: 'Desnudo' }, { value: 'any', label: 'Cualquiera' },
+                ])}
+                {toggleField('Compatible con plantas', 'plant_compatible')}
+                {toggleField('Necesita troncos / madera', 'needs_driftwood')}
+                {toggleField('Necesita escondites', 'needs_hiding')}
+                {toggleField('Tolera sal (salobre)', 'salt_tolerant')}
+
+                {/* Dieta y comportamiento */}
+                <Text style={S.sheetSection}>🍤 Dieta y comportamiento</Text>
+                {arrField('Tipos de alimento', 'food_types', 'pellets, artemia, escamas...')}
+                {txtField('Frecuencia de alimentación', 'feeding_frequency')}
+                {enumChips('Actividad', 'activity', [
+                  { value: 'diurnal', label: 'Diurno' }, { value: 'nocturnal', label: 'Nocturno' }, { value: 'crepuscular', label: 'Crepuscular' },
+                ])}
+                {arrField('Notas de comportamiento', 'behavior_notes', 'saltador, cavador...')}
+
+                {/* Reproducción */}
+                <Text style={S.sheetSection}>🥚 Reproducción</Text>
+                {enumChips('Método', 'breeding_method', [
+                  { value: 'egg-scatter', label: 'Dispersor' }, { value: 'cave-spawner', label: 'Cueva' },
+                  { value: 'mouthbrooder', label: 'Incub. bucal' }, { value: 'livebearer', label: 'Vivíparo' },
+                  { value: 'bubble-nest', label: 'Nido burbujas' }, { value: 'plant-spawner', label: 'En plantas' },
+                  { value: 'substrate-spawner', label: 'Sustrato' }, { value: 'unknown', label: 'Desconocido' },
+                ])}
+                {enumChips('Dificultad de cría', 'breeding_difficulty', [
+                  { value: 1, label: '1' }, { value: 2, label: '2' }, { value: 3, label: '3' }, { value: 4, label: '4' }, { value: 5, label: '5' },
+                ])}
+                {txtField('Dimorfismo sexual', 'sexual_dimorphism', true)}
+                {txtField('Notas de cría', 'breeding_notes', true)}
+
+                {/* Compatibilidad */}
+                <Text style={S.sheetSection}>🤝 Compatibilidad</Text>
+                {arrField('Compatible con', 'compatible_with', 'Corydoras, Tetras...')}
+                {arrField('Evitar con', 'avoid_with', 'Cíclidos grandes...')}
+
+                {/* Salud */}
+                <Text style={S.sheetSection}>🩺 Salud</Text>
+                {arrField('Enfermedades comunes', 'common_diseases', 'Ich, hidropesía...')}
+
+                {/* Conservación y origen */}
+                <Text style={S.sheetSection}>🌍 Conservación y origen</Text>
+                {enumChips('Estado (IUCN)', 'conservation_status', [
+                  { value: 'LC', label: 'LC' }, { value: 'NT', label: 'NT' }, { value: 'VU', label: 'VU' },
+                  { value: 'EN', label: 'EN' }, { value: 'CR', label: 'CR' }, { value: 'EW', label: 'EW' },
+                  { value: 'EX', label: 'EX' }, { value: 'DD', label: 'DD' }, { value: 'NE', label: 'NE' },
+                ])}
+                {enumChips('Origen', 'sourcing', [
+                  { value: 'wild', label: 'Salvaje' }, { value: 'captive', label: 'Criadero' }, { value: 'both', label: 'Ambos' },
+                ])}
+                {enumChips('CITES', 'cites', [
+                  { value: 'I', label: 'I' }, { value: 'II', label: 'II' }, { value: 'III', label: 'III' },
+                ])}
+
+                {/* Variantes */}
+                <Text style={S.sheetSection}>🎨 Variantes / morfos</Text>
+                {arrField('Variantes', 'variants', 'Halfmoon, Plakat...')}
+
+                {/* Estado de publicación (admin) */}
+                <Text style={S.sheetSection}>🔓 Publicación</Text>
+                {toggleField('Aprobado (visible en el catálogo)', 'approved')}
 
                 <TouchableOpacity style={S.saveBtn} onPress={saveEdit}>
                   <Ionicons name="checkmark-circle" size={19} color="#fff" />

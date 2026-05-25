@@ -4,7 +4,12 @@ Todas las mejoras, features y bugfixes documentados por versión.
 
 ---
 
-## [1.0.0] — 2026-05-25 (OTA v9–v13)
+## [1.0.0] — 2026-05-25 (OTA v9–v14)
+
+### Panel de administrador — editor de especies completo (v14)
+- **Editor de peces ampliado a la ficha completa (~40 campos)** — Antes solo se editaban ~15 campos. Ahora el editor cubre todas las secciones del modelo `Fish`: Identidad (subfamilia, hábitat, otros nombres), Físico (tamaño juvenil, vida, litros ideal), Parámetros avanzados (KH, TDS), Hábitat y preferencias (nivel de nado, dificultad, corriente, luz, sustrato, plantas, troncos, escondites, sal), Dieta y comportamiento (tipos de alimento, frecuencia, actividad, notas), Reproducción (método, dificultad, dimorfismo, notas), Compatibilidad (compatible/evitar), Salud (enfermedades), Conservación (IUCN, origen, CITES) y Variantes/morfos.
+- **Control de publicación (admin)** — Nuevo toggle "Aprobado" para mostrar/ocultar una especie del catálogo público (`approved`).
+- Implementado con helpers de render reutilizables (`txtField`, `arrField`, `toggleField`, `enumChips`, `numGrid`) llamados inline para no perder el foco de los inputs.
 
 ### Nuevas funciones (v13)
 - **Eliminar comentario propio en la comunidad** — En el modal de comentarios, cada usuario ve un botón de papelera solo en SUS comentarios; al tocarlo pide confirmación y borra (optimista) actualizando el contador. Nueva función `deleteComment` en `useCommunity.ts` + política RLS `comments_delete` (`supabase/comment_delete_policy.sql`, también en `migration.sql`) que permite borrar únicamente el comentario propio (`auth.uid() = user_id`).
