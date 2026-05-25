@@ -82,8 +82,37 @@ export function AquariumsProvider({ children }: { children: React.ReactNode }) {
             .order('created_at', { ascending: false });
           if (!error && data) {
             if (data.length > 0) {
-              // Supabase has data — use it and sync to local cache
-              const list = data.map(rowToEntry);
+              let list = data.map(rowToEntry);
+
+              // ── Heal fish sync ──────────────────────────────────────────
+              // Older aquariums may exist in Supabase with NO aquarium_fish
+              // rows (fish were only saved locally because earlier syncs
+              // failed). If the local cache still has those fish, back-fill
+              // them to Supabase AND keep them in the UI — otherwise this load
+              // would overwrite the local cache with fish-less data.
+              try {
+                const raw = await AsyncStorage.getItem(localKey(user.id));
+                const localList: AquariumEntry[] = raw ? JSON.parse(raw) : [];
+                if (localList.length > 0) {
+                  list = await Promise.all(list.map(async (aq) => {
+                    if (aq.fish.length > 0) return aq; // Supabase already has fish
+                    const localAq = localList.find(l => l.id === aq.id);
+                    if (localAq && localAq.fish.length > 0) {
+                      for (const f of localAq.fish) {
+                        try {
+                          await supabase.from('aquarium_fish').upsert(
+                            { aquarium_id: aq.id, fish_id: f.fishId, quantity: f.qty },
+                            { onConflict: 'aquarium_id,fish_id' },
+                          );
+                        } catch (e) { console.warn('[Aquariums] fish backfill failed:', e); }
+                      }
+                      return { ...aq, fish: localAq.fish };
+                    }
+                    return aq;
+                  }));
+                }
+              } catch (e) { console.warn('[Aquariums] fish heal failed:', e); }
+
               setAquariums(list);
               setSelectedId(list[0]?.id ?? null);
               await AsyncStorage.setItem(localKey(user.id), JSON.stringify(list));
