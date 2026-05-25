@@ -4,6 +4,24 @@ Todas las mejoras, features y bugfixes documentados por versión.
 
 ---
 
+## [1.0.0] — 2026-05-25 (OTA v9–v12)
+
+### Estabilidad de arranque (v9)
+- **Fix "la app a veces no abre a la primera"** — Llamadas de red sin timeout en `useAuth` (`getSession`, `fetchProfile`) y `useUserProfile` colgaban la pantalla de splash para siempre en arranques con red lenta/fría. Añadido `withTimeout` (6s) con fallback a la caché local + red de seguridad (8s) que garantiza que la splash nunca se quede colgada. Nuevo util `src/utils/withTimeout.ts`. Sincronizaciones a Supabase movidas a segundo plano.
+
+### Comunidad — perfiles de otros acuaristas (v11–v12)
+- **Visor fullscreen de fotos en perfiles ajenos** — En `UserProfileModal`, las fotos de la galería de otros usuarios ahora son tocables y se abren en grande con su descripción (antes eran `<View>` sin acción).
+- **Visibilidad pública de acuarios/peces/rutinas** — `supabase/community_visibility.sql`: políticas RLS de lectura pública (`SELECT TO authenticated`) para `aquariums`, `aquarium_fish` y `aquarium_tasks`. Escrituras siguen restringidas al dueño.
+- **Fix sync de peces a Supabase (RESUELTO ✅)** — La tabla `aquarium_fish` estaba **vacía** en producción: los peces solo vivían en el almacenamiento local de cada teléfono, por eso nadie veía los peces de otros. Causa: `setFishQty` upsert fallaba silencioso + la carga sobrescribía la caché local con datos de Supabase sin peces. Fix en `useAquariums.tsx`: al cargar, si un acuario de Supabase no tiene peces pero el local sí, hace backfill (upsert) a `aquarium_fish` y conserva los locales. Cada usuario auto-cura sus peces al abrir la app.
+
+### UI (v10)
+- **Chips del selector de acuarios en Galería** — Se estiraban a toda la altura de la pantalla en nativo (el fix previo solo funcionaba en web). Solución a prueba de balas: contenedor de altura fija (44px) + altura explícita en los chips (36px) + etiqueta a una línea.
+
+### Herramientas / Diagnóstico
+- Diagnóstico de datos en vivo vía Chrome MCP → SQL Editor de Supabase (rol `postgres`, sin RLS). Nota: consultas con `anon key` dan vacío porque casi todas las políticas son `TO authenticated`.
+
+---
+
 ## [1.0.0] — 2026-05-22 (OTA v8)
 
 ### Bug Fixes — Subida de fotos (RESUELTO ✅)
