@@ -426,6 +426,7 @@ export default function BreedingScreen() {
       {/* ── Goal tabs ── */}
       <View style={styles.tabsBar}>
         <ScrollView horizontal showsHorizontalScrollIndicator={false}
+          style={{ flexGrow: 0, flexShrink: 0 }}
           contentContainerStyle={{ paddingHorizontal: SPACING.md, gap: 8, alignItems: 'center' }}>
           {goals.map(g => {
             const cfg = STATUS_CONFIG[g.status];
@@ -523,6 +524,7 @@ export default function BreedingScreen() {
           {/* ── Quick actions ── */}
           <Text style={styles.sectionTitle}>Registrar actividad</Text>
           <ScrollView horizontal showsHorizontalScrollIndicator={false}
+            style={{ flexGrow: 0, flexShrink: 0 }}
             contentContainerStyle={{ paddingHorizontal: SPACING.md, gap: 10, paddingBottom: 4 }}>
             {(Object.keys(LOG_CONFIG) as LogType[]).map(type => {
               const cfg = LOG_CONFIG[type];

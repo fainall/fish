@@ -117,7 +117,8 @@ export default function GalleryScreen({ navigation }: any) {
       {/* Aquarium selector */}
       {aquariums.length > 1 && (
         <ScrollView horizontal showsHorizontalScrollIndicator={false}
-          contentContainerStyle={{ gap: 8, paddingHorizontal: SPACING.md, paddingBottom: SPACING.sm }}>
+          style={S.aqSelector}
+          contentContainerStyle={{ gap: 8, paddingHorizontal: SPACING.md, paddingBottom: SPACING.sm, alignItems: 'center' }}>
           {aquariums.map(aq => (
             <TouchableOpacity key={aq.id}
               style={[S.aqChip, selectedAquarium.id === aq.id && S.aqChipOn]}
@@ -250,6 +251,7 @@ const S = StyleSheet.create({
   title:    { fontSize: 18, fontWeight: '700', color: COLORS.text, fontFamily: FONTS.sansBd, textAlign: 'center' },
   subtitle: { fontSize: 11, color: COLORS.textMuted, marginTop: 1, fontFamily: FONTS.sans, textAlign: 'center' },
 
+  aqSelector: { flexGrow: 0, flexShrink: 0 },
   aqChip: {
     paddingHorizontal: 14, paddingVertical: 8, borderRadius: 16,
     backgroundColor: COLORS.backgroundCard, borderWidth: 1, borderColor: COLORS.border,

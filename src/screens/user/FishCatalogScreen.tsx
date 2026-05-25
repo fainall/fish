@@ -613,7 +613,7 @@ function CompatibilityPanel({
   return (
     <View style={styles.compatPanel}>
       {/* Selected chips */}
-      <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.compatChips}>
+      <ScrollView horizontal showsHorizontalScrollIndicator={false} style={[styles.compatChips, { flexGrow: 0, flexShrink: 0 }]}>
         {selected.map(f => (
           <TouchableOpacity key={f.id} style={styles.compatChip} onPress={() => onRemove(f.id)}>
             <Text style={styles.compatChipText} numberOfLines={1}>{f.common_name}</Text>
@@ -1060,7 +1060,7 @@ export default function FishCatalogScreen({ embedded, navigation }: { embedded?:
                     </TouchableOpacity>
                   )}
                 </View>
-                <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.filterRow}
+                <ScrollView horizontal showsHorizontalScrollIndicator={false} style={[styles.filterRow, { flexGrow: 0, flexShrink: 0 }]}
                   contentContainerStyle={{ paddingHorizontal: 0, gap: 8 }}>
                   {WATER_TYPES.map(({ label, value }) => (
                     <TouchableOpacity
@@ -1237,6 +1237,7 @@ export default function FishCatalogScreen({ embedded, navigation }: { embedded?:
                   Peces cuyo rango de temperatura, pH y GH se ajusta a un acuario {styleInfo.label.toLowerCase()}
                 </Text>
                 <ScrollView horizontal showsHorizontalScrollIndicator={false}
+                  style={{ flexGrow: 0, flexShrink: 0 }}
                   contentContainerStyle={{ gap: 10, paddingVertical: 4 }}>
                   {recommendedFish.map(({ fish, score }) => (
                     <RecommendedCard

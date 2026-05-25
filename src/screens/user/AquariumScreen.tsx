@@ -614,7 +614,7 @@ export default function AquariumScreen({ navigation }: any) {
         ) : (
           <>
             {/* ── Aquarium tabs ── */}
-            <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.tabs}>
+            <ScrollView horizontal showsHorizontalScrollIndicator={false} style={{ flexGrow: 0, flexShrink: 0 }} contentContainerStyle={styles.tabs}>
               {aquariums.map(a => (
                 <TouchableOpacity
                   key={a.id}

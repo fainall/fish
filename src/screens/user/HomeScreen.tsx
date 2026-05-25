@@ -400,7 +400,7 @@ export default function HomeScreen({ navigation }: any) {
               <Text style={styles.emptyBadgesText}>Completa acciones para desbloquear logros</Text>
             </View>
           ) : (
-            <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.badgesScroll}>
+            <ScrollView horizontal showsHorizontalScrollIndicator={false} style={{ flexGrow: 0, flexShrink: 0 }} contentContainerStyle={styles.badgesScroll}>
               {recentBadges.map((a, i) => {
                 const rColor = RARITY_COLORS[a.rarity];
                 return (

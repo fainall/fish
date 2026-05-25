@@ -375,7 +375,7 @@ export default function FloraScreen({ embedded }: { embedded?: boolean } = {}) {
           {aquariums.length > 0 && (
             <View style={styles.section}>
               <Text style={styles.sectionLabel}>Acuario</Text>
-              <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{ gap: SPACING.sm }}>
+              <ScrollView horizontal showsHorizontalScrollIndicator={false} style={{ flexGrow: 0, flexShrink: 0 }} contentContainerStyle={{ gap: SPACING.sm }}>
                 {aquariums.map(aq => (
                   <TouchableOpacity
                     key={aq.id}
@@ -1025,7 +1025,7 @@ export default function FloraScreen({ embedded }: { embedded?: boolean } = {}) {
           {aquariums.length > 0 && (
             <View style={styles.section}>
               <Text style={styles.sectionLabel}>Acuario</Text>
-              <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{ gap: SPACING.sm }}>
+              <ScrollView horizontal showsHorizontalScrollIndicator={false} style={{ flexGrow: 0, flexShrink: 0 }} contentContainerStyle={{ gap: SPACING.sm }}>
                 {aquariums.map(aq => (
                   <TouchableOpacity
                     key={aq.id}
@@ -1121,7 +1121,7 @@ export default function FloraScreen({ embedded }: { embedded?: boolean } = {}) {
 
                   {/* Selector de marca/producto */}
                   <Text style={[styles.corrInputLabel, { marginTop: SPACING.sm }]}>Producto</Text>
-                  <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{ gap: 6, paddingBottom: 4 }}>
+                  <ScrollView horizontal showsHorizontalScrollIndicator={false} style={{ flexGrow: 0, flexShrink: 0 }} contentContainerStyle={{ gap: 6, paddingBottom: 4 }}>
                     {prod.brands.map((b, i) => (
                       <TouchableOpacity
                         key={b.name}

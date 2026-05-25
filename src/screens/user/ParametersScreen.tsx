@@ -317,7 +317,7 @@ export default function ParametersScreen() {
         {/* ── Aquarium selector ── */}
         {aquariums.length > 0 && (
           <View style={styles.aqSelectorRow}>
-            <ScrollView horizontal showsHorizontalScrollIndicator={false}>
+            <ScrollView horizontal showsHorizontalScrollIndicator={false} style={{ flexGrow: 0, flexShrink: 0 }}>
               {aquariums.map(a => (
                 <TouchableOpacity
                   key={a.id}

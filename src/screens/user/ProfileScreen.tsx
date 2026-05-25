@@ -294,6 +294,7 @@ export default function ProfileScreen({ onClose, navigation }: Props) {
             <ScrollView
               horizontal
               showsHorizontalScrollIndicator={false}
+              style={{ flexGrow: 0, flexShrink: 0 }}
               contentContainerStyle={styles.achievScroll}
             >
               {recentBadges.map((u, i) => {

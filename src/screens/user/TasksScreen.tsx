@@ -247,6 +247,7 @@ export default function TasksScreen() {
         {/* ── Aquarium tabs ── */}
         {aquariums.length > 0 && (
           <ScrollView horizontal showsHorizontalScrollIndicator={false}
+            style={{ flexGrow: 0, flexShrink: 0 }}
             contentContainerStyle={styles.aqTabs}>
             {aquariums.map(a => {
               const ov = tasksFor(a.id).filter(t => !t.completed && new Date(t.due_date) < new Date()).length;
@@ -372,7 +373,7 @@ export default function TasksScreen() {
 
               {/* Task type */}
               <Text style={styles.formLabel}>Tipo de tarea</Text>
-              <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.typeRow}>
+              <ScrollView horizontal showsHorizontalScrollIndicator={false} style={{ flexGrow: 0, flexShrink: 0 }} contentContainerStyle={styles.typeRow}>
                 {TASK_TYPES.map(([type, info]) => (
                   <TouchableOpacity key={type}
                     style={[styles.typeChip, formType === type && {

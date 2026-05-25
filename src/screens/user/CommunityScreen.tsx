@@ -481,6 +481,7 @@ function CreatePostModal({ visible, onClose, onSubmit, userName, initialAchievem
                   </View>
                 ) : (
                   <ScrollView horizontal showsHorizontalScrollIndicator={false}
+                    style={{ flexGrow: 0, flexShrink: 0 }}
                     contentContainerStyle={{ gap: 8, paddingVertical: 4 }}>
                     {myAchievements.slice(0, 12).map(a => (
                       <TouchableOpacity
@@ -636,7 +637,7 @@ export default function CommunityScreen() {
       <ScrollView
         horizontal
         showsHorizontalScrollIndicator={false}
-        style={styles.tagScroll}
+        style={[styles.tagScroll, { flexGrow: 0, flexShrink: 0 }]}
         contentContainerStyle={{ paddingHorizontal: SPACING.md, gap: 8 }}
       >
         {COMMUNITY_TAGS.map(tag => (
@@ -686,6 +687,7 @@ export default function CommunityScreen() {
                   <Text style={styles.shareLogroSub}>Tus seguidores adoran tus victorias</Text>
                 </View>
                 <ScrollView horizontal showsHorizontalScrollIndicator={false}
+                  style={{ flexGrow: 0, flexShrink: 0 }}
                   contentContainerStyle={{ gap: 8, paddingVertical: 4 }}>
                   {achievementsList.slice(0, 8).map(a => (
                     <TouchableOpacity
@@ -712,6 +714,7 @@ export default function CommunityScreen() {
                   <Text style={styles.topUsersSub}>Los más activos esta semana</Text>
                 </View>
                 <ScrollView horizontal showsHorizontalScrollIndicator={false}
+                  style={{ flexGrow: 0, flexShrink: 0 }}
                   contentContainerStyle={{ gap: 8, paddingVertical: 4 }}>
                   {topUsers.map((u, i) => (
                     <TouchableOpacity
