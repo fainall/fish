@@ -105,6 +105,7 @@ export default function UserProfileModal({ visible, userId, userName, posts, onC
   const [photos,    setPhotos]    = useState<PublicPhoto[]>([]);
   const [tasks,     setTasks]     = useState<PublicTask[]>([]);
   const [loading,   setLoading]   = useState(false);
+  const [viewingPhoto, setViewingPhoto] = useState<PublicPhoto | null>(null);
 
   const isDemoUser = /^u\d+$/.test(userId);
 
@@ -127,7 +128,7 @@ export default function UserProfileModal({ visible, userId, userName, posts, onC
   // Fetch user's public data (or use synthetic data for demo users)
   useEffect(() => {
     if (!visible) {
-      setAquariums([]); setPhotos([]); setTasks([]);
+      setAquariums([]); setPhotos([]); setTasks([]); setViewingPhoto(null);
       return;
     }
 
@@ -301,14 +302,15 @@ export default function UserProfileModal({ visible, userId, userName, posts, onC
                 ) : (
                   <View style={S.photoGrid}>
                     {photos.map(p => (
-                      <View key={p.id} style={S.photoItem}>
+                      <TouchableOpacity key={p.id} style={S.photoItem} activeOpacity={0.85}
+                        onPress={() => setViewingPhoto(p)}>
                         <Image source={{ uri: p.image_url }} style={S.photoImg} />
                         {p.caption && (
                           <View style={S.photoCaption}>
                             <Text style={S.photoCaptionText} numberOfLines={1}>{p.caption}</Text>
                           </View>
                         )}
-                      </View>
+                      </TouchableOpacity>
                     ))}
                   </View>
                 )
@@ -384,6 +386,21 @@ export default function UserProfileModal({ visible, userId, userName, posts, onC
             </View>
           </ScrollView>
         </View>
+
+        {/* Fullscreen photo viewer */}
+        {viewingPhoto && (
+          <View style={S.viewerRoot}>
+            <TouchableOpacity style={S.viewerClose} onPress={() => setViewingPhoto(null)}>
+              <Ionicons name="close" size={24} color="#fff" />
+            </TouchableOpacity>
+            <Image source={{ uri: viewingPhoto.image_url }} style={S.viewerImg} resizeMode="contain" />
+            {viewingPhoto.caption && (
+              <View style={S.viewerCaptionWrap}>
+                <Text style={S.viewerCaption}>{viewingPhoto.caption}</Text>
+              </View>
+            )}
+          </View>
+        )}
       </View>
     </Modal>
   );
@@ -522,6 +539,23 @@ const S = StyleSheet.create({
   postContent:    { fontSize: 13, color: COLORS.text, fontFamily: FONTS.sans, lineHeight: 18 },
   postMeta:       { flexDirection: 'row', alignItems: 'center', gap: 3, marginTop: 6 },
   postMetaText:   { fontSize: 11, color: COLORS.textMuted, fontFamily: FONTS.sans },
+
+  // Fullscreen photo viewer
+  viewerRoot: {
+    position: 'absolute', top: 0, left: 0, right: 0, bottom: 0,
+    backgroundColor: 'rgba(0,0,0,0.95)', alignItems: 'center', justifyContent: 'center', zIndex: 100,
+  },
+  viewerClose: {
+    position: 'absolute', top: 44, right: 20, zIndex: 101,
+    width: 40, height: 40, borderRadius: 20, backgroundColor: 'rgba(255,255,255,0.15)',
+    alignItems: 'center', justifyContent: 'center',
+  },
+  viewerImg: { width: '100%', height: '72%' },
+  viewerCaptionWrap: {
+    position: 'absolute', bottom: 48, left: 20, right: 20,
+    padding: 12, backgroundColor: 'rgba(0,0,0,0.6)', borderRadius: BORDER_RADIUS.lg,
+  },
+  viewerCaption: { color: '#fff', fontSize: 14, textAlign: 'center', fontFamily: FONTS.sans },
 
   // Empty state
   empty: { alignItems: 'center', padding: SPACING.xl, gap: SPACING.sm },
