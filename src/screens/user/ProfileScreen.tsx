@@ -331,6 +331,7 @@ export default function ProfileScreen({ onClose, navigation }: Props) {
                 { label: 'Galería', icon: 'images-outline', color: COLORS.accent, screen: 'Gallery' },
                 { label: 'Comunidad', icon: 'people-outline', color: COLORS.primary, screen: 'Community' },
                 { label: 'Chat de soporte', icon: 'chatbubble-outline', color: COLORS.success, screen: 'Chat' },
+                { label: 'Reportar un error', icon: 'bug-outline', color: COLORS.warning, screen: 'Support' },
               ].map(({ label, icon, color, screen }, i, arr) => (
                 <React.Fragment key={screen}>
                   <TouchableOpacity style={styles.actionRow} onPress={() => navigation.navigate(screen)}>

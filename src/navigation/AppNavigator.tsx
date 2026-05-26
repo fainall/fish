@@ -34,6 +34,7 @@ import GalleryScreen from '../screens/user/GalleryScreen';
 import CommunityScreen from '../screens/user/CommunityScreen';
 import ChatScreen from '../screens/user/ChatScreen';
 import LegalScreen from '../screens/user/LegalScreen';
+import SupportScreen from '../screens/user/SupportScreen';
 
 // Admin screens
 import AdminDashboardScreen from '../screens/admin/AdminDashboardScreen';
@@ -170,6 +171,7 @@ function ProfileStackNavigator() {
       <ProfileStack.Screen name="Community" component={CommunityScreen} />
       <ProfileStack.Screen name="Chat" component={ChatScreen} />
       <ProfileStack.Screen name="Legal" component={LegalScreen} />
+      <ProfileStack.Screen name="Support" component={SupportScreen} />
     </ProfileStack.Navigator>
   );
 }

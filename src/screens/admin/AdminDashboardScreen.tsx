@@ -13,6 +13,7 @@ import { useAuth } from '../../hooks/useAuth';
 import { useFishDatabase, EditableFish } from '../../hooks/useFishDatabase';
 import { useFishSuggestions } from '../../hooks/useFishSuggestions';
 import { useAdminConversations, AdminConversation } from '../../hooks/useAdminConversations';
+import { useTickets, TicketStatus } from '../../hooks/useTickets';
 import { WaterType, AggressionLevel, FishSuggestion, SuggestionStatus } from '../../types';
 import { confirmAction } from '../../utils/confirm';
 import { supabase, IS_DEMO_MODE } from '../../services/supabase';
@@ -61,8 +62,10 @@ export default function AdminDashboardScreen() {
   const { fish: fishList, updateFish, addFish, deleteFish, resetToDefault } = useFishDatabase();
   const { suggestions, pendingCount, approveSuggestion, rejectSuggestion, deleteSuggestion } = useFishSuggestions();
   const { conversations, loadMessages, sendAdminReply: persistReply, markRead } = useAdminConversations();
+  const { tickets, updateStatus: updateTicketStatus } = useTickets();
+  const openTickets = tickets.filter(t => t.status === 'open').length;
 
-  type Tab = 'dashboard' | 'chat' | 'fish' | 'suggestions';
+  type Tab = 'dashboard' | 'chat' | 'fish' | 'suggestions' | 'tickets';
   const [activeTab,      setActiveTab]      = useState<Tab>('dashboard');
   const [selectedConvId, setSelectedConvId] = useState<string | null>(null);
   const selectedConv = conversations.find(c => c.id === selectedConvId) ?? null;
@@ -298,6 +301,7 @@ export default function AdminDashboardScreen() {
           { key: 'chat',        label: 'Chats',        icon: 'chatbubbles', iconO: 'chatbubbles-outline' },
           { key: 'fish',        label: 'Peces',        icon: 'fish',        iconO: 'fish-outline' },
           { key: 'suggestions', label: 'Sugerencias',  icon: 'bulb',        iconO: 'bulb-outline' },
+          { key: 'tickets',     label: 'Tickets',      icon: 'bug',         iconO: 'bug-outline' },
         ] as const).map(t => {
           const on = activeTab === t.key;
           return (
@@ -306,6 +310,9 @@ export default function AdminDashboardScreen() {
                 <Ionicons name={(on ? t.icon : t.iconO) as any} size={19} color={on ? COLORS.primary : COLORS.textMuted} />
                 {t.key === 'suggestions' && pendingCount > 0 && (
                   <View style={S.dot}><Text style={S.dotText}>{pendingCount}</Text></View>
+                )}
+                {t.key === 'tickets' && openTickets > 0 && (
+                  <View style={S.dot}><Text style={S.dotText}>{openTickets}</Text></View>
                 )}
               </View>
               <Text style={[S.tabLabel, on && S.tabLabelOn]}>{t.label}</Text>
@@ -586,6 +593,56 @@ export default function AdminDashboardScreen() {
                     <Text style={[S.badgeText, { color: sc }]}>{sl}</Text>
                   </View>
                 </TouchableOpacity>
+              );
+            })}
+          </ScrollView>
+        </View>
+      )}
+
+      {/* ══════════════════════════════════════════════════════════════════
+          TICKETS — soporte / errores reportados
+      ══════════════════════════════════════════════════════════════════ */}
+      {activeTab === 'tickets' && (
+        <View style={{ height: Math.max(winH - 180, 300), width: '100%' }}>
+          <ScrollView style={{ flex: 1 }} showsVerticalScrollIndicator={false}
+            contentContainerStyle={{ paddingHorizontal: SPACING.screen, paddingTop: SPACING.md, paddingBottom: SPACING.xxl }}>
+            <Text style={S.sectionTitle}>Tickets de soporte</Text>
+            <Text style={S.listMeta}>{tickets.length} reportes · {openTickets} abiertos</Text>
+            {tickets.length === 0 ? (
+              <View style={S.empty}>
+                <Ionicons name="bug-outline" size={36} color={COLORS.textMuted} />
+                <Text style={S.emptyText}>Sin reportes aún</Text>
+              </View>
+            ) : tickets.map(t => {
+              const catIcon = t.category === 'bug' ? 'bug' : t.category === 'suggestion' ? 'bulb' : 'ellipsis-horizontal';
+              return (
+                <View key={t.id} style={S.ticketCard}>
+                  <View style={S.ticketHead}>
+                    <Ionicons name={catIcon as any} size={15} color={COLORS.primary} />
+                    <Text style={S.ticketUser} numberOfLines={1}>{t.user_name}</Text>
+                    <Text style={S.ticketWhen}>
+                      {new Date(t.created_at).toLocaleDateString('es-ES', { day: 'numeric', month: 'short' })}
+                    </Text>
+                  </View>
+                  <Text style={S.ticketBody}>{t.description}</Text>
+                  {t.image_url ? (
+                    <Image source={{ uri: t.image_url }} style={S.ticketShot} resizeMode="cover" />
+                  ) : null}
+                  <View style={S.ticketStatusRow}>
+                    {(['open', 'in_progress', 'resolved'] as TicketStatus[]).map(st => {
+                      const on = t.status === st;
+                      const cl = st === 'open' ? COLORS.warning : st === 'in_progress' ? COLORS.primary : COLORS.success;
+                      const lb = st === 'open' ? 'Abierto' : st === 'in_progress' ? 'En proceso' : 'Resuelto';
+                      return (
+                        <TouchableOpacity key={st}
+                          style={[S.tStatusChip, on && { backgroundColor: cl, borderColor: cl }]}
+                          onPress={() => updateTicketStatus(t.id, st)}>
+                          <Text style={[S.tStatusChipText, on && { color: '#fff' }]}>{lb}</Text>
+                        </TouchableOpacity>
+                      );
+                    })}
+                  </View>
+                </View>
               );
             })}
           </ScrollView>
@@ -1073,6 +1130,23 @@ const S = StyleSheet.create({
   statIcon: { width: 40, height: 40, borderRadius: 20, alignItems: 'center', justifyContent: 'center' },
   statValue: { fontSize: 26, fontWeight: '800', color: COLORS.text, fontFamily: FONTS.sansEb },
   statLabel: { fontSize: 11, color: COLORS.textMuted, fontFamily: FONTS.sans },
+
+  // Tickets (admin)
+  ticketCard: {
+    backgroundColor: COLORS.backgroundCard, borderRadius: BORDER_RADIUS.lg,
+    padding: SPACING.md, marginBottom: SPACING.sm, borderWidth: 1, borderColor: COLORS.border, gap: 8,
+  },
+  ticketHead: { flexDirection: 'row', alignItems: 'center', gap: 6 },
+  ticketUser: { flex: 1, fontSize: 13, fontWeight: '700', color: COLORS.text, fontFamily: FONTS.sansBd },
+  ticketWhen: { fontSize: 11, color: COLORS.textMuted, fontFamily: FONTS.sans },
+  ticketBody: { fontSize: 13, color: COLORS.text, lineHeight: 19, fontFamily: FONTS.sans },
+  ticketShot: { width: '100%', height: 160, borderRadius: BORDER_RADIUS.lg, backgroundColor: COLORS.backgroundLight },
+  ticketStatusRow: { flexDirection: 'row', gap: 6, marginTop: 2 },
+  tStatusChip: {
+    flex: 1, alignItems: 'center', paddingVertical: 7, borderRadius: 10,
+    backgroundColor: COLORS.backgroundLight, borderWidth: 1, borderColor: COLORS.border,
+  },
+  tStatusChipText: { fontSize: 11, fontWeight: '700', color: COLORS.textMuted, fontFamily: FONTS.sansBd },
 
   banner: {
     flexDirection: 'row', alignItems: 'center', gap: SPACING.sm,

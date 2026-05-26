@@ -4,7 +4,12 @@ Todas las mejoras, features y bugfixes documentados por versión.
 
 ---
 
-## [1.0.0] — 2026-05-25 (OTA v9–v15)
+## [1.0.0] — 2026-05-25 (OTA v9–v16)
+
+### Tickets de soporte / reporte de errores (v16)
+- **Pantalla "Reportar un error"** (Perfil → Más secciones) — el usuario elige tipo (Error/Sugerencia/Otro), describe el problema y adjunta una **captura de pantalla** opcional; abajo ve "Mis reportes" con su estado (Abierto/En proceso/Resuelto).
+- **Pestaña "Tickets" en el panel admin** — lista todos los reportes con autor, descripción, captura y badge de abiertos; el admin cambia el estado con un toque.
+- Nueva tabla `support_tickets` + RLS (`supabase/support_tickets.sql`): el usuario crea/ve los suyos, el admin ve todos y actualiza estado. Capturas al bucket `posts` bajo `tickets/`. Nuevo hook `useTickets.ts` y pantalla `SupportScreen.tsx`.
 
 ### Panel de administrador — completitud y estadísticas (v15)
 - **Indicador de completitud de ficha** — Cada especie en la lista del admin muestra un badge de % (verde ≥80, ámbar ≥50, rojo <50) según cuántos campos clave de la ficha están llenos, para detectar de un vistazo las fichas incompletas. Helper `fishCompleteness()`.
