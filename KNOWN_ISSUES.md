@@ -1,6 +1,32 @@
 # Aquaria — Issues Conocidos y Deuda Técnica
 
-Última actualización: 2026-05-22
+Última actualización: 2026-05-25
+
+---
+
+## 🏗️ ROADMAP DE ARQUITECTURA (análisis 2026-05-25)
+
+Lectura de arquitectura sobre 69 archivos / ~32k líneas (~7k son datos estáticos).
+**Veredicto: sólida y coherente; NO requiere reescritura.** Una debilidad estructural real, a atacar POST-lanzamiento.
+
+### Debilidad #1 (REAL) — Doble fuente de verdad: AsyncStorage + Supabase
+- Cada hook escribe a local y a Supabase con lógica de sync hecha a mano, distinta por archivo. No hay única fuente de verdad.
+- **Consecuencia ya observada:** bug de sync de peces (v12) — local y remoto divergieron. Parchado con backfill, pero el patrón seguirá generando bugs de "datos que no sincronizan/se pisan" al crecer.
+- **Cura de fondo:** migrar la capa de datos a **TanStack Query (React Query)** → caché, reintentos y dedup centralizados; elimina el `useState+useEffect+sync manual` de cada hook.
+- **Cuándo:** v1.1, POST-lanzamiento. NO hacerlo antes de salir a tiendas (refactor grande = riesgo de regresión sobre código que hoy funciona).
+
+### Debilidad #2 (menor / teórica) — Hooks planos vs Providers
+- 12 de 19 hooks son Providers; 7 son planos (`useCommunity`, `useTickets`, etc.).
+- En la práctica NO hay duplicación de estado simultánea: `useCommunity` tiene 1 consumidor; `useTickets` lo usan SupportScreen y AdminDashboard pero en árboles de navegación mutuamente excluyentes (user vs admin). Impacto actual ≈ nulo. Revisar solo si algún hook plano pasa a tener 2+ consumidores vivos a la vez.
+
+### Deudas menores (no urgentes)
+- Pantallas monolíticas: FloraScreen (1798), AquariumScreen (1660), FishCatalogScreen (1614), AdminDashboard (1365), Community (1185) → partir en componentes.
+- 12 Providers anidados en App.tsx → orden frágil; considerar componer.
+- `IS_DEMO_MODE` ramificado en ~16 archivos → encapsular en un punto único.
+
+### Infra / escala (Supabase)
+- El cuello de botella a escala son las **imágenes** (Storage + egress), no la BD. Recomendado: redimensionar antes de subir (no solo `quality:0.5`) en los 4 puntos de subida.
+- Free tier se **pausa tras 7 días sin actividad** → pasar a Pro ($25/mes) antes del lanzamiento real (también da CDN de imágenes y backups).
 
 ---
 
