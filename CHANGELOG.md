@@ -4,7 +4,10 @@ Todas las mejoras, features y bugfixes documentados por versión.
 
 ---
 
-## [1.0.0] — 2026-05-25 (OTA v9–v16)
+## [1.0.0] — 2026-05-25 (OTA v9–v17)
+
+### Seguridad — eliminado "usuario fantasma" en Comunidad (v17)
+- **Removido el fallback de identidad falsa** (`'u1'` / `'Usuario Demo'`) en `CommunityScreen`. Si por cualquier motivo no hubiera usuario, ya no se atribuye actividad a una identidad inventada; ahora usa cadena vacía y los handlers del hook (`toggleLike`/`addComment`/`createPost`) ya no-operan sin `uid`. (Comunidad vive tras el login, así que en producción siempre hay usuario real.) Cierra issue crítico #2.
 
 ### Tickets de soporte / reporte de errores (v16)
 - **Pantalla "Reportar un error"** (Perfil → Más secciones) — el usuario elige tipo (Error/Sugerencia/Otro), describe el problema y adjunta una **captura de pantalla** opcional; abajo ve "Mis reportes" con su estado (Abierto/En proceso/Resuelto).

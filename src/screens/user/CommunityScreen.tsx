@@ -534,8 +534,11 @@ function CreatePostModal({ visible, onClose, onSubmit, userName, initialAchievem
 // ────────────────────────────────────────────────────────────
 export default function CommunityScreen() {
   const { user } = useAuth();
-  const currentUserId   = user?.id ?? 'u1';
-  const currentUserName = user?.full_name ?? 'Usuario Demo';
+  // Sin identidad falsa: Comunidad vive tras el login (AppNavigator bloquea si !user),
+  // y los handlers del hook (toggleLike/addComment/createPost) ya no-operan si no hay uid.
+  // Antes se usaba 'u1'/'Usuario Demo' como fallback → permitía posts/likes con identidad falsa.
+  const currentUserId   = user?.id ?? '';
+  const currentUserName = user?.full_name ?? '';
 
   const {
     posts, comments, loading, loadingMore, hasMore,
