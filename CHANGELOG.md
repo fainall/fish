@@ -4,7 +4,13 @@ Todas las mejoras, features y bugfixes documentados por versión.
 
 ---
 
-## [1.0.0] — 2026-05-25 (OTA v9–v17)
+## [1.0.0] — 2026-05-25 (OTA v9–v18)
+
+### Analítica de uso — "zona caliente" (v18)
+- **Rastreo de uso propio** (sin terceros, en Supabase). Nueva tabla `analytics_events` + RLS (`supabase/analytics_events.sql`): el usuario inserta solo sus eventos, el admin los ve todos. Servicio `src/services/analytics.ts` (fire-and-forget, no registra en demo ni `__DEV__`); el uid se setea desde `AuthProvider`.
+- **Rastreo automático de pantallas** enganchado al `NavigationContainer` (`onStateChange` en `App.tsx`) → registra la pantalla activa en cada cambio, sin instrumentar pantalla por pantalla.
+- **Pestaña "Métricas" en el panel admin**: resumen (vistas totales, usuarios activos), **zona caliente** (ranking de pantallas más visitadas con barras + %), y gráfico de vistas por día (últimos 7). Hook `useAdminAnalytics.ts` (agrega últimos 30 días en cliente).
+- Nota de escala: `screen_view` genera muchas filas; para launch está bien, a futuro podar > 90 días o migrar a PostHog.
 
 ### Seguridad — eliminado "usuario fantasma" en Comunidad (v17)
 - **Removido el fallback de identidad falsa** (`'u1'` / `'Usuario Demo'`) en `CommunityScreen`. Si por cualquier motivo no hubiera usuario, ya no se atribuye actividad a una identidad inventada; ahora usa cadena vacía y los handlers del hook (`toggleLike`/`addComment`/`createPost`) ya no-operan sin `uid`. (Comunidad vive tras el login, así que en producción siempre hay usuario real.) Cierra issue crítico #2.

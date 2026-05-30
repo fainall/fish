@@ -1,14 +1,15 @@
 import 'react-native-gesture-handler';
-import React, { useEffect } from 'react';
+import React, { useEffect, useRef } from 'react';
 import { View, ActivityIndicator } from 'react-native';
 import * as Updates from 'expo-updates';
 import { initSentry } from './src/services/sentry';
+import { logScreenView } from './src/services/analytics';
 import ErrorBoundary from './src/components/ErrorBoundary';
 
 // Initialize Sentry before anything else renders
 initSentry();
 import SplashScreen from './src/screens/SplashScreen';
-import { NavigationContainer } from '@react-navigation/native';
+import { NavigationContainer, useNavigationContainerRef } from '@react-navigation/native';
 import { StatusBar } from 'expo-status-bar';
 import { GestureHandlerRootView } from 'react-native-gesture-handler';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
@@ -51,6 +52,10 @@ export default function App() {
   // Prefetch all fish images in background → instant load on next screens
   useFishImagePrefetch();
 
+  // Rastreo de uso (zona caliente): registra la pantalla activa en cada cambio
+  const navRef = useNavigationContainerRef();
+  const routeNameRef = useRef<string | undefined>(undefined);
+
   // Check for OTA updates on every app boot — apply on next launch (no reload loop)
   useEffect(() => {
     if (__DEV__) return;
@@ -89,7 +94,16 @@ export default function App() {
           <AquariumGalleryProvider>
           <AchievementsProvider>
           <UserProfileProvider>
-            <NavigationContainer>
+            <NavigationContainer
+              ref={navRef}
+              onReady={() => { routeNameRef.current = navRef.getCurrentRoute()?.name; }}
+              onStateChange={() => {
+                const prev = routeNameRef.current;
+                const curr = navRef.getCurrentRoute()?.name;
+                if (curr && curr !== prev) logScreenView(curr);
+                routeNameRef.current = curr;
+              }}
+            >
               <StatusBar style="light" backgroundColor="#071520" />
               <AppNavigator />
             </NavigationContainer>

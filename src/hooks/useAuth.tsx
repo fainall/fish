@@ -2,6 +2,7 @@ import React, { createContext, useContext, useEffect, useState } from 'react';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { supabase, IS_DEMO_MODE } from '../services/supabase';
 import { identifyUser, clearUser as sentryClearUser } from '../services/sentry';
+import { setAnalyticsUser } from '../services/analytics';
 import { withTimeout } from '../utils/withTimeout';
 import { User } from '../types';
 
@@ -37,6 +38,9 @@ async function saveRegistered(users: Record<string, User & { password: string }>
 export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [user, setUser]       = useState<User | null>(null);
   const [loading, setLoading] = useState(true);
+
+  // Mantener el uid disponible para analítica (rastreo de uso sin consultar sesión)
+  useEffect(() => { setAnalyticsUser(user?.id ?? null); }, [user?.id]);
 
   const persist = async (u: User) => {
     await AsyncStorage.setItem(SESSION_KEY, JSON.stringify(u));

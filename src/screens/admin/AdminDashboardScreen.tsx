@@ -14,6 +14,7 @@ import { useFishDatabase, EditableFish } from '../../hooks/useFishDatabase';
 import { useFishSuggestions } from '../../hooks/useFishSuggestions';
 import { useAdminConversations, AdminConversation } from '../../hooks/useAdminConversations';
 import { useTickets, TicketStatus } from '../../hooks/useTickets';
+import { useAdminAnalytics } from '../../hooks/useAdminAnalytics';
 import { WaterType, AggressionLevel, FishSuggestion, SuggestionStatus } from '../../types';
 import { confirmAction } from '../../utils/confirm';
 import { supabase, IS_DEMO_MODE } from '../../services/supabase';
@@ -64,8 +65,9 @@ export default function AdminDashboardScreen() {
   const { conversations, loadMessages, sendAdminReply: persistReply, markRead } = useAdminConversations();
   const { tickets, updateStatus: updateTicketStatus } = useTickets();
   const openTickets = tickets.filter(t => t.status === 'open').length;
+  const analytics = useAdminAnalytics();
 
-  type Tab = 'dashboard' | 'chat' | 'fish' | 'suggestions' | 'tickets';
+  type Tab = 'dashboard' | 'metrics' | 'chat' | 'fish' | 'suggestions' | 'tickets';
   const [activeTab,      setActiveTab]      = useState<Tab>('dashboard');
   const [selectedConvId, setSelectedConvId] = useState<string | null>(null);
   const selectedConv = conversations.find(c => c.id === selectedConvId) ?? null;
@@ -298,6 +300,7 @@ export default function AdminDashboardScreen() {
       <View style={S.tabBar}>
         {([
           { key: 'dashboard',   label: 'Inicio',      icon: 'grid',        iconO: 'grid-outline' },
+          { key: 'metrics',     label: 'Métricas',     icon: 'stats-chart', iconO: 'stats-chart-outline' },
           { key: 'chat',        label: 'Chats',        icon: 'chatbubbles', iconO: 'chatbubbles-outline' },
           { key: 'fish',        label: 'Peces',        icon: 'fish',        iconO: 'fish-outline' },
           { key: 'suggestions', label: 'Sugerencias',  icon: 'bulb',        iconO: 'bulb-outline' },
@@ -389,6 +392,81 @@ export default function AdminDashboardScreen() {
             </TouchableOpacity>
           ))}
         </ScrollView>
+        </View>
+      )}
+
+      {/* ══════════════════════════════════════════════════════════════════
+          MÉTRICAS — zona caliente y uso de la app
+      ══════════════════════════════════════════════════════════════════ */}
+      {activeTab === 'metrics' && (
+        <View style={{ height: Math.max(winH - 180, 300), width: '100%' }}>
+          <ScrollView style={{ flex: 1 }} showsVerticalScrollIndicator={false}
+            contentContainerStyle={{ paddingHorizontal: SPACING.screen, paddingTop: SPACING.md, paddingBottom: SPACING.xxl }}>
+
+            <Text style={S.sectionTitle}>Uso de la app · últimos 30 días</Text>
+
+            {analytics.loading ? (
+              <Text style={S.emptyText}>Cargando métricas…</Text>
+            ) : analytics.totalViews === 0 ? (
+              <View style={S.empty}>
+                <Ionicons name="stats-chart-outline" size={36} color={COLORS.textMuted} />
+                <Text style={S.emptyText}>Aún no hay datos de uso</Text>
+                <Text style={[S.emptyText, { fontSize: 12 }]}>Se registran cuando los usuarios navegan por la app (build publicado).</Text>
+              </View>
+            ) : (
+              <>
+                {/* Resumen */}
+                <View style={S.statsGrid}>
+                  <View style={S.statCard}>
+                    <View style={[S.statIcon, { backgroundColor: COLORS.primary + '18' }]}>
+                      <Ionicons name="eye-outline" size={20} color={COLORS.primary} />
+                    </View>
+                    <Text style={S.statValue}>{analytics.totalViews}</Text>
+                    <Text style={S.statLabel}>Vistas de pantalla</Text>
+                  </View>
+                  <View style={S.statCard}>
+                    <View style={[S.statIcon, { backgroundColor: COLORS.success + '18' }]}>
+                      <Ionicons name="people-outline" size={20} color={COLORS.success} />
+                    </View>
+                    <Text style={S.statValue}>{analytics.activeUsers}</Text>
+                    <Text style={S.statLabel}>Usuarios activos</Text>
+                  </View>
+                </View>
+
+                {/* Zona caliente */}
+                <Text style={S.sectionTitle}>🔥 Zona caliente (pantallas más usadas)</Text>
+                {analytics.hotScreens.slice(0, 10).map((s, i) => (
+                  <View key={s.screen} style={S.hotRow}>
+                    <Text style={S.hotRank}>{i + 1}</Text>
+                    <View style={{ flex: 1 }}>
+                      <View style={S.hotLabelRow}>
+                        <Text style={S.hotLabel}>{s.label}</Text>
+                        <Text style={S.hotCount}>{s.count} · {s.pct}%</Text>
+                      </View>
+                      <View style={S.hotBarTrack}>
+                        <View style={[S.hotBarFill, { width: `${Math.max(s.pct, 2)}%` }]} />
+                      </View>
+                    </View>
+                  </View>
+                ))}
+
+                {/* Vistas por día (últimos 7) */}
+                <Text style={S.sectionTitle}>Vistas por día (últimos 7)</Text>
+                <View style={S.dayChart}>
+                  {(() => {
+                    const max = Math.max(...analytics.viewsByDay.map(d => d.count), 1);
+                    return analytics.viewsByDay.map(d => (
+                      <View key={d.day} style={S.dayCol}>
+                        <Text style={S.dayCount}>{d.count}</Text>
+                        <View style={[S.dayBar, { height: Math.max((d.count / max) * 90, 3) }]} />
+                        <Text style={S.dayLabel}>{d.day.slice(8, 10)}/{d.day.slice(5, 7)}</Text>
+                      </View>
+                    ));
+                  })()}
+                </View>
+              </>
+            )}
+          </ScrollView>
         </View>
       )}
 
@@ -1147,6 +1225,25 @@ const S = StyleSheet.create({
     backgroundColor: COLORS.backgroundLight, borderWidth: 1, borderColor: COLORS.border,
   },
   tStatusChipText: { fontSize: 11, fontWeight: '700', color: COLORS.textMuted, fontFamily: FONTS.sansBd },
+
+  // Métricas — zona caliente
+  hotRow: { flexDirection: 'row', alignItems: 'center', gap: SPACING.sm, marginBottom: SPACING.sm },
+  hotRank: { width: 22, fontSize: 14, fontWeight: '800', color: COLORS.textMuted, fontFamily: FONTS.sansEb, textAlign: 'center' },
+  hotLabelRow: { flexDirection: 'row', justifyContent: 'space-between', marginBottom: 4 },
+  hotLabel: { fontSize: 13, fontWeight: '600', color: COLORS.text, fontFamily: FONTS.sansSb },
+  hotCount: { fontSize: 12, color: COLORS.textMuted, fontFamily: FONTS.sans },
+  hotBarTrack: { height: 8, borderRadius: 4, backgroundColor: COLORS.backgroundLight, overflow: 'hidden' },
+  hotBarFill: { height: 8, borderRadius: 4, backgroundColor: COLORS.primary },
+  // Métricas — vistas por día
+  dayChart: {
+    flexDirection: 'row', alignItems: 'flex-end', justifyContent: 'space-between',
+    backgroundColor: COLORS.backgroundCard, borderRadius: BORDER_RADIUS.xl,
+    borderWidth: 1, borderColor: COLORS.border, padding: SPACING.md, gap: 4, minHeight: 150,
+  },
+  dayCol: { flex: 1, alignItems: 'center', gap: 4 },
+  dayCount: { fontSize: 10, color: COLORS.textMuted, fontFamily: FONTS.sans },
+  dayBar: { width: '70%', borderRadius: 4, backgroundColor: COLORS.primary, minHeight: 3 },
+  dayLabel: { fontSize: 9, color: COLORS.textMuted, fontFamily: FONTS.sans },
 
   banner: {
     flexDirection: 'row', alignItems: 'center', gap: SPACING.sm,
