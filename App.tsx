@@ -1,10 +1,12 @@
 import 'react-native-gesture-handler';
-import React, { useEffect, useRef } from 'react';
-import { View, ActivityIndicator } from 'react-native';
+import React, { useEffect, useRef, useState } from 'react';
+import { View, ActivityIndicator, Linking } from 'react-native';
 import * as Updates from 'expo-updates';
 import { initSentry } from './src/services/sentry';
 import { logScreenView } from './src/services/analytics';
+import { supabase } from './src/services/supabase';
 import ErrorBoundary from './src/components/ErrorBoundary';
+import ResetPasswordScreen from './src/screens/auth/ResetPasswordScreen';
 
 // Initialize Sentry before anything else renders
 initSentry();
@@ -39,6 +41,21 @@ import { AquariumGalleryProvider } from './src/hooks/useAquariumGallery';
 import { useFishImagePrefetch } from './src/hooks/useFishImagePrefetch';
 import AppNavigator from './src/navigation/AppNavigator';
 
+/** Extrae los tokens de recuperación del deep link (vienen tras # o ?). */
+function parseRecoveryTokens(url: string) {
+  const frag = (url.split('#')[1] ?? url.split('?')[1] ?? '');
+  const params: Record<string, string> = {};
+  frag.split('&').forEach(pair => {
+    const [k, v] = pair.split('=');
+    if (k) params[k] = decodeURIComponent(v ?? '');
+  });
+  return {
+    access_token:  params.access_token,
+    refresh_token: params.refresh_token,
+    type:          params.type,
+  };
+}
+
 export default function App() {
   const [fontsLoaded] = useFonts({
     DMSans_400Regular,
@@ -55,6 +72,29 @@ export default function App() {
   // Rastreo de uso (zona caliente): registra la pantalla activa en cada cambio
   const navRef = useNavigationContainerRef();
   const routeNameRef = useRef<string | undefined>(undefined);
+
+  // ── Recuperación de contraseña por deep link (aquaria://reset-password) ──────
+  const [recoveryMode, setRecoveryMode] = useState(false);
+  useEffect(() => {
+    const handleUrl = async (url: string | null) => {
+      if (!url || !url.includes('reset-password')) return;
+      const { access_token, refresh_token, type } = parseRecoveryTokens(url);
+      if (type === 'recovery' && access_token) {
+        try {
+          await supabase.auth.setSession({
+            access_token,
+            refresh_token: refresh_token ?? '',
+          });
+        } catch (e) { console.warn('[Recovery] setSession failed:', e); }
+        setRecoveryMode(true);
+      }
+    };
+    // Arranque en frío (la app se abrió desde el enlace)
+    Linking.getInitialURL().then(handleUrl).catch(() => {});
+    // App ya abierta
+    const sub = Linking.addEventListener('url', (e) => handleUrl(e.url));
+    return () => sub.remove();
+  }, []);
 
   // Check for OTA updates on every app boot — apply on next launch (no reload loop)
   useEffect(() => {
@@ -94,19 +134,23 @@ export default function App() {
           <AquariumGalleryProvider>
           <AchievementsProvider>
           <UserProfileProvider>
-            <NavigationContainer
-              ref={navRef}
-              onReady={() => { routeNameRef.current = navRef.getCurrentRoute()?.name; }}
-              onStateChange={() => {
-                const prev = routeNameRef.current;
-                const curr = navRef.getCurrentRoute()?.name;
-                if (curr && curr !== prev) logScreenView(curr);
-                routeNameRef.current = curr;
-              }}
-            >
-              <StatusBar style="light" backgroundColor="#071520" />
-              <AppNavigator />
-            </NavigationContainer>
+            <StatusBar style="light" backgroundColor="#071520" />
+            {recoveryMode ? (
+              <ResetPasswordScreen onDone={() => setRecoveryMode(false)} />
+            ) : (
+              <NavigationContainer
+                ref={navRef}
+                onReady={() => { routeNameRef.current = navRef.getCurrentRoute()?.name; }}
+                onStateChange={() => {
+                  const prev = routeNameRef.current;
+                  const curr = navRef.getCurrentRoute()?.name;
+                  if (curr && curr !== prev) logScreenView(curr);
+                  routeNameRef.current = curr;
+                }}
+              >
+                <AppNavigator />
+              </NavigationContainer>
+            )}
           </UserProfileProvider>
           </AchievementsProvider>
           </AquariumGalleryProvider>

@@ -31,7 +31,10 @@ export default function ForgotPasswordScreen({ navigation }: any) {
     }
     setLoading(true);
     try {
-      const { error } = await supabase.auth.resetPasswordForEmail(e);
+      // El enlace del correo abre la app en la pantalla "nueva contraseña" (deep link).
+      const { error } = await supabase.auth.resetPasswordForEmail(e, {
+        redirectTo: 'aquaria://reset-password',
+      });
       // No revelamos si el correo existe o no (buena práctica de seguridad):
       // mostramos éxito igual. Solo registramos errores reales en consola.
       if (error) console.warn('[ForgotPassword] resetPasswordForEmail:', error.message);

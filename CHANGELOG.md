@@ -4,11 +4,16 @@ Todas las mejoras, features y bugfixes documentados por versión.
 
 ---
 
-## [1.0.0] — 2026-05-31 (OTA v9–v19)
+## [1.0.0] — 2026-05-31 (OTA v9–v20)
 
-### Recuperar contraseña — ahora funciona de verdad (v19)
-- **Implementada `ForgotPasswordScreen`** y registrada en el AuthNavigator. Antes el botón "¿Olvidaste tu contraseña?" del Login navegaba a una ruta inexistente (botón muerto). Ahora pide el correo y envía el enlace de recuperación vía `supabase.auth.resetPasswordForEmail`; muestra confirmación neutra (no revela si el correo existe, por seguridad). Guarda modo demo.
-- **Pendiente de config en Supabase** para el flujo completo: verificar Site URL + plantilla de email de recuperación en el dashboard. (El "fijar nueva contraseña dentro de la app" vía deep-link queda como mejora opcional.)
+### Recuperar contraseña — flujo completo dentro de la app (v20)
+- **Cambio de contraseña dentro de la app vía deep link.** El correo de recuperación ahora abre la app (`aquaria://reset-password`) en una pantalla **"Nueva contraseña"** (`ResetPasswordScreen`) donde el usuario fija la clave nueva (`supabase.auth.updateUser`).
+- `ForgotPasswordScreen` envía con `redirectTo: 'aquaria://reset-password'`.
+- `App.tsx`: handler de deep link (RN `Linking`, arranque en frío + app abierta) que parsea los tokens, establece la sesión de recuperación (`setSession`) y muestra `ResetPasswordScreen` en modo recuperación.
+- **Config requerida en Supabase:** añadir `aquaria://reset-password` a Authentication → URL Configuration → **Redirect URLs**. El esquema `aquaria://` ya está en app.json (puede requerir build nativo nuevo para registrarse en el SO).
+
+### Recuperar contraseña — base (v19)
+- Implementada `ForgotPasswordScreen` (envío de correo) y registrada en AuthNavigator. Antes el botón era un cascarón (ruta inexistente).
 
 ## [1.0.0] — 2026-05-25 (OTA v9–v18)
 
