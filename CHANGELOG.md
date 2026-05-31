@@ -4,6 +4,12 @@ Todas las mejoras, features y bugfixes documentados por versión.
 
 ---
 
+## [1.0.0] — 2026-05-31 (OTA v9–v19)
+
+### Recuperar contraseña — ahora funciona de verdad (v19)
+- **Implementada `ForgotPasswordScreen`** y registrada en el AuthNavigator. Antes el botón "¿Olvidaste tu contraseña?" del Login navegaba a una ruta inexistente (botón muerto). Ahora pide el correo y envía el enlace de recuperación vía `supabase.auth.resetPasswordForEmail`; muestra confirmación neutra (no revela si el correo existe, por seguridad). Guarda modo demo.
+- **Pendiente de config en Supabase** para el flujo completo: verificar Site URL + plantilla de email de recuperación en el dashboard. (El "fijar nueva contraseña dentro de la app" vía deep-link queda como mejora opcional.)
+
 ## [1.0.0] — 2026-05-25 (OTA v9–v18)
 
 ### Analítica de uso — "zona caliente" (v18)
