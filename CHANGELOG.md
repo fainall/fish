@@ -6,6 +6,12 @@ Todas las mejoras, features y bugfixes documentados por versión.
 
 ## [1.0.0] — 2026-05-31 (OTA v9–v20)
 
+### Correo de marca propia — Custom SMTP (config Supabase, 2026-05-31)
+- **Configurado Custom SMTP en Supabase** (Authentication → Emails → SMTP Settings) con el correo de cPanel del dominio `severynfish.cl`. Los correos de auth (recuperación, confirmación) ahora salen de **Aquaria `<soporte@severynfish.cl>`** en vez del remitente por defecto de Supabase (`noreply@mail.app.supabase.io`).
+  - Sender: `soporte@severynfish.cl` · Nombre: "Aquaria" · Host: `mail.severynfish.cl` · Puerto: 465.
+  - Esto además quita el límite de envío del correo integrado de Supabase (que "no es para producción").
+- Nota: la plantilla del correo "Reset password" ya estaba personalizada con marca propia; lo que faltaba era el remitente (SMTP), ahora resuelto.
+
 ### Recuperar contraseña — flujo completo dentro de la app (v20)
 - **Cambio de contraseña dentro de la app vía deep link.** El correo de recuperación ahora abre la app (`aquaria://reset-password`) en una pantalla **"Nueva contraseña"** (`ResetPasswordScreen`) donde el usuario fija la clave nueva (`supabase.auth.updateUser`).
 - `ForgotPasswordScreen` envía con `redirectTo: 'aquaria://reset-password'`.
