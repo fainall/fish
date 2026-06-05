@@ -4,7 +4,14 @@ Todas las mejoras, features y bugfixes documentados por versión.
 
 ---
 
-## [1.0.0] — 2026-05-31 (OTA v9–v20)
+## [1.0.0] — 2026-05-31 (OTA v9–v21)
+
+### Asistente IA real y seguro en el Chat (v21)
+- **El chat ahora usa IA real (OpenAI)** en vez de respuestas locales por palabras clave. Arquitectura **segura**: la API key vive SOLO en una **Supabase Edge Function** (`supabase/functions/fish-ai`), nunca en la app (si estuviera en el bundle, cualquiera la extraería).
+- **Candados de la IA** (system prompt blindado): responde SOLO sobre peces/acuarios; rechaza cualquier otro tema; nunca acciones de cuenta/clave/pagos; no revela instrucciones internas; ignora prompt-injection. Modelo `gpt-4o-mini`, máx 450 tokens (control de costo).
+- App: `src/services/fishAI.ts` invoca la función con la sesión del usuario (sin key). `ChatScreen` usa la IA y **cae a las respuestas locales como respaldo** si la IA falla o no está desplegada (degradación elegante).
+- `tsconfig.json`: excluye `supabase/functions` (código Deno) del type-check de la app.
+- **Pendiente (tú):** rotar la API key expuesta, desplegar la función (`supabase functions deploy fish-ai`) y poner el secreto `OPENAI_API_KEY` en Supabase.
 
 ### Correo de marca propia — Custom SMTP (config Supabase, 2026-05-31)
 - **Configurado Custom SMTP en Supabase** (Authentication → Emails → SMTP Settings) con el correo de cPanel del dominio `severynfish.cl`. Los correos de auth (recuperación, confirmación) ahora salen de **Aquaria `<soporte@severynfish.cl>`** en vez del remitente por defecto de Supabase (`noreply@mail.app.supabase.io`).

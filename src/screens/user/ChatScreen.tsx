@@ -8,6 +8,7 @@ import { Ionicons } from '@expo/vector-icons';
 import { COLORS, FONTS, SPACING, BORDER_RADIUS } from '../../constants/theme';
 import { useAuth } from '../../hooks/useAuth';
 import { useConversation, ChatMessage } from '../../hooks/useConversation';
+import { askFishAI, AIHistoryItem } from '../../services/fishAI';
 
 const AI_RESPONSES: Record<string, string> = {
   default: 'Gracias por tu mensaje. El administrador te responderá pronto. Mientras tanto, puedo ayudarte con preguntas básicas sobre acuarística.',
@@ -86,12 +87,22 @@ export default function ChatScreen() {
     await persistMessage(userInput);
     timersRef.current.push(setTimeout(() => flatListRef.current?.scrollToEnd({ animated: true }), 50));
 
-    // Generate local AI response
-    timersRef.current.push(setTimeout(() => {
+    // Historial reciente (user/ai) para dar contexto a la IA — excluye welcome
+    const history: AIHistoryItem[] = messages
+      .filter(m => m.id !== 'welcome' && (m.sender === 'user' || m.sender === 'ai'))
+      .slice(-6)
+      .map(m => ({ role: m.sender === 'user' ? 'user' : 'assistant', content: m.content }));
+
+    try {
+      // IA real (Edge Function segura). Si falla, respuesta local como respaldo.
+      const { answer, failed } = await askFishAI(userInput, history);
+      addAIMessage(failed || !answer ? getAIResponse(userInput) : answer);
+    } catch {
       addAIMessage(getAIResponse(userInput));
+    } finally {
       setLoading(false);
       timersRef.current.push(setTimeout(() => flatListRef.current?.scrollToEnd({ animated: true }), 100));
-    }, 1200));
+    }
   };
 
   const QUICK_QUESTIONS = [
