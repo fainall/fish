@@ -11,6 +11,7 @@ import { FishImage as Image } from '../../components/FishImage';
 import { LinearGradient } from 'expo-linear-gradient';
 import { Ionicons } from '@expo/vector-icons';
 import * as ImagePicker from 'expo-image-picker';
+import { SafeAreaView } from 'react-native-safe-area-context';
 import { COLORS, FONTS, SPACING, BORDER_RADIUS } from '../../constants/theme';
 import { useTickets, TicketCategory, TicketStatus } from '../../hooks/useTickets';
 
@@ -60,6 +61,7 @@ export default function SupportScreen({ navigation }: any) {
 
   return (
     <LinearGradient colors={['#EDF6FB', '#F4FAFD']} style={S.root}>
+      <SafeAreaView style={{ flex: 1 }} edges={['top']}>
       <View style={S.topBar}>
         <TouchableOpacity style={S.backBtn} onPress={() => navigation?.goBack()}>
           <Ionicons name="arrow-back" size={20} color={COLORS.text} />
@@ -143,6 +145,7 @@ export default function SupportScreen({ navigation }: any) {
           );
         })}
       </ScrollView>
+      </SafeAreaView>
     </LinearGradient>
   );
 }
@@ -151,7 +154,7 @@ const S = StyleSheet.create({
   root: { flex: 1 },
   topBar: {
     flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between',
-    paddingHorizontal: SPACING.lg, paddingTop: SPACING.xl, paddingBottom: SPACING.sm,
+    paddingHorizontal: SPACING.lg, paddingTop: SPACING.sm, paddingBottom: SPACING.sm,
   },
   backBtn: {
     width: 40, height: 40, borderRadius: 20, backgroundColor: COLORS.backgroundCard,

@@ -3,6 +3,7 @@ import {
   View, Text, ScrollView, TouchableOpacity, StyleSheet,
   Modal, TextInput, Alert, Platform, useWindowDimensions,
 } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
 import RAnimated, { FadeInRight, FadeOutLeft, Layout, useSharedValue, useAnimatedStyle, withSpring } from 'react-native-reanimated';
 import { FishImage as Image } from '../../components/FishImage';
 import { LinearGradient } from 'expo-linear-gradient';
@@ -598,6 +599,7 @@ export default function AquariumScreen({ navigation }: any) {
 
   return (
     <LinearGradient colors={[COLORS.abyss, COLORS.background]} style={styles.container}>
+      <SafeAreaView style={{ flex: 1 }} edges={['top']}>
       <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={{ paddingBottom: SPACING.xxl }}>
 
         {/* ── Empty state ── */}
@@ -1187,6 +1189,7 @@ export default function AquariumScreen({ navigation }: any) {
         </View>
       </Modal>
 
+      </SafeAreaView>
     </LinearGradient>
   );
 }

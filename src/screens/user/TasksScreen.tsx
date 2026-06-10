@@ -3,6 +3,7 @@ import {
   View, Text, ScrollView, TouchableOpacity, StyleSheet,
   Modal, TextInput, Alert, RefreshControl,
 } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
 import { LinearGradient } from 'expo-linear-gradient';
 import { Ionicons } from '@expo/vector-icons';
 import { COLORS, FONTS, SPACING, BORDER_RADIUS, SHADOWS } from '../../constants/theme';
@@ -219,6 +220,7 @@ export default function TasksScreen() {
 
   return (
     <LinearGradient colors={['#EBF4FA', '#F3F9FD']} style={styles.container}>
+      <SafeAreaView style={{ flex: 1 }} edges={['top']}>
       <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={{ paddingBottom: SPACING.xxl }}
         refreshControl={
           <RefreshControl refreshing={refreshing} onRefresh={onRefresh}
@@ -462,6 +464,7 @@ export default function TasksScreen() {
           </View>
         </View>
       </Modal>
+      </SafeAreaView>
     </LinearGradient>
   );
 }
@@ -474,7 +477,7 @@ const styles = StyleSheet.create({
   header: {
     flexDirection: 'row', alignItems: 'center',
     paddingHorizontal: SPACING.lg,
-    paddingTop: SPACING.xl, paddingBottom: SPACING.md,
+    paddingTop: SPACING.sm, paddingBottom: SPACING.md,
   },
   headerTitle: { fontSize: 28, fontWeight: '800', fontFamily: FONTS.sansEb, color: COLORS.text, letterSpacing: -0.5 },
   headerAlert: { fontSize: 13, fontFamily: FONTS.sansSb, color: COLORS.error, marginTop: 2, fontWeight: '600' },

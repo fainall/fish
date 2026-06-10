@@ -5,6 +5,7 @@ import {
 import RAnimated, { FadeInDown, FadeInRight, Layout } from 'react-native-reanimated';
 import { LinearGradient } from 'expo-linear-gradient';
 import { Ionicons } from '@expo/vector-icons';
+import { SafeAreaView } from 'react-native-safe-area-context';
 import { COLORS, FONTS, SPACING, BORDER_RADIUS, SHADOWS } from '../../constants/theme';
 import {
   useAchievements,
@@ -49,6 +50,7 @@ export default function AchievementsScreen({ onClose }: Props) {
 
   return (
     <LinearGradient colors={['#EDF6FB', '#F4FAFD']} style={styles.container}>
+      <SafeAreaView style={{ flex: 1 }} edges={['top']}>
 
       {/* Header */}
       <View style={styles.header}>
@@ -277,6 +279,7 @@ export default function AchievementsScreen({ onClose }: Props) {
 
         <View style={{ height: SPACING.xxl }} />
       </ScrollView>
+      </SafeAreaView>
     </LinearGradient>
   );
 }
@@ -289,7 +292,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'space-between',
     paddingHorizontal: SPACING.lg,
-    paddingTop: SPACING.xl,
+    paddingTop: SPACING.sm,
     paddingBottom: SPACING.md,
   },
   closeBtn: { padding: 4 },

@@ -11,6 +11,7 @@ import {
 } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import { Ionicons } from '@expo/vector-icons';
+import { SafeAreaView } from 'react-native-safe-area-context';
 import { COLORS, FONTS, SPACING, BORDER_RADIUS } from '../../constants/theme';
 import { supabase, IS_DEMO_MODE } from '../../services/supabase';
 
@@ -49,6 +50,7 @@ export default function ForgotPasswordScreen({ navigation }: any) {
 
   return (
     <LinearGradient colors={['#EDF6FB', '#F4FAFD', '#EDF6FB']} style={styles.container}>
+      <SafeAreaView style={{ flex: 1 }} edges={['top', 'bottom']}>
       <KeyboardAvoidingView behavior={Platform.OS === 'ios' ? 'padding' : 'height'} style={styles.flex}>
         <ScrollView contentContainerStyle={styles.scroll} keyboardShouldPersistTaps="handled">
 
@@ -114,6 +116,7 @@ export default function ForgotPasswordScreen({ navigation }: any) {
           )}
         </ScrollView>
       </KeyboardAvoidingView>
+      </SafeAreaView>
     </LinearGradient>
   );
 }

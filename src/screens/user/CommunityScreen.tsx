@@ -10,6 +10,7 @@ import Animated, { FadeInDown, FadeOut, Layout } from 'react-native-reanimated';
 import { Ionicons } from '@expo/vector-icons';
 import { confirmAction } from '../../utils/confirm';
 import * as ImagePicker from 'expo-image-picker';
+import { SafeAreaView } from 'react-native-safe-area-context';
 import { COLORS, FONTS, SPACING, BORDER_RADIUS as RADII } from '../../constants/theme';
 import { Post, PostComment } from '../../types';
 import { COMMUNITY_TAGS } from '../../data/communityData';
@@ -640,6 +641,7 @@ export default function CommunityScreen() {
 
   return (
     <LinearGradient colors={['#EDF6FB', '#F4FAFD']} style={styles.container}>
+      <SafeAreaView style={{ flex: 1 }} edges={['top']}>
       {/* Header */}
       <View style={styles.header}>
         <View>
@@ -828,6 +830,7 @@ export default function CommunityScreen() {
         userName={currentUserName}
         initialAchievementId={shareAchId}
       />
+      </SafeAreaView>
     </LinearGradient>
   );
 }
@@ -840,7 +843,7 @@ const styles = StyleSheet.create({
     justifyContent: 'space-between',
     alignItems: 'center',
     paddingHorizontal: SPACING.md,
-    paddingTop: SPACING.xl,
+    paddingTop: SPACING.sm,
     paddingBottom: SPACING.sm,
   },
   headerTitle: { fontSize: 22, fontWeight: '700', color: COLORS.text, fontFamily: FONTS.sansEb },

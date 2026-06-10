@@ -4,6 +4,15 @@ Todas las mejoras, features y bugfixes documentados por versión.
 
 ---
 
+## [1.0.0] — 2026-06-08 (OTA v22)
+
+### Adaptación a window insets — notch, Dynamic Island y barra de gestos (v22)
+- **Antes nadie consumía los insets**: el `SafeAreaProvider` existía pero ninguna pantalla usaba `SafeAreaView`/`useSafeAreaInsets`; 18 pantallas dependían de un `paddingTop` fijo (~32px). En iPhones con notch/Dynamic Island (inset 47–59px) el header quedaba debajo del notch, y la tab bar no respetaba la barra de gestos.
+- **Tab bar** (`AppNavigator`): altura y `paddingBottom` ahora suman `insets.bottom` (home indicator/gestos). En Android clásico (inset 0) queda idéntica.
+- **19 pantallas envueltas** con `SafeAreaView edges={['top']}` de `react-native-safe-area-context` DENTRO del gradiente raíz (el fondo sigue cubriendo toda la pantalla, el contenido se desplaza según el inset real). `paddingTop: SPACING.xl` → `SPACING.sm` en los headers para no duplicar espacio. Onboarding, AdminDashboard y ForgotPassword usan `edges={['top','bottom']}` (no tienen tab bar). AchievementsScreen también envuelto (se monta como Modal fullscreen y no hereda el área segura del padre). FishCatalog/Flora NO se tocaron (van embebidos en Explore, que ya quedó protegido).
+- **StatusBar** `style="light"` → `style="dark"`: la app es de tema claro; en iOS el texto del status bar habría sido invisible (blanco sobre claro).
+- **`edgeToEdgeEnabled: true`** en app.json — aplica en el PRÓXIMO build nativo (Android 15+ lo fuerza igual; el código de insets ya lo soporta).
+
 ## [1.0.0] — 2026-05-31 (OTA v9–v21)
 
 ### Asistente IA real y seguro en el Chat (v21)

@@ -2,6 +2,7 @@ import React, { useState, useMemo } from 'react';
 import {
   View, Text, ScrollView, TouchableOpacity, StyleSheet,
 } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
 import { LinearGradient } from 'expo-linear-gradient';
 import { Ionicons } from '@expo/vector-icons';
 import { COLORS, FONTS, SPACING, BORDER_RADIUS, SHADOWS } from '../../constants/theme';
@@ -259,6 +260,7 @@ export default function HealthScreen({ navigation }: any) {
 
   return (
     <View style={styles.container}>
+      <SafeAreaView style={{ flex: 1 }} edges={['top']}>
       <LinearGradient
         colors={[COLORS.primaryDark, COLORS.primary]}
         start={{ x: 0, y: 0 }}
@@ -420,6 +422,7 @@ export default function HealthScreen({ navigation }: any) {
           </Text>
         </View>
       </ScrollView>
+      </SafeAreaView>
     </View>
   );
 }

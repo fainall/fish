@@ -11,6 +11,7 @@ import React, { useMemo, useState } from 'react';
 import {
   View, Text, StyleSheet, TouchableOpacity, TextInput, ScrollView,
 } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
 import { LinearGradient } from 'expo-linear-gradient';
 import { Ionicons } from '@expo/vector-icons';
 import { COLORS, FONTS, SPACING, BORDER_RADIUS } from '../../constants/theme';
@@ -76,6 +77,7 @@ export default function CalculatorScreen({ navigation }: any) {
 
   return (
     <LinearGradient colors={['#EDF6FB', '#F4FAFD']} style={S.root}>
+      <SafeAreaView style={{ flex: 1 }} edges={['top']}>
       {/* Top bar */}
       <View style={S.topBar}>
         <TouchableOpacity style={S.backBtn} onPress={() => navigation?.goBack()}>
@@ -206,6 +208,7 @@ export default function CalculatorScreen({ navigation }: any) {
           Siempre verifica las instrucciones de tu producto específico.
         </Text>
       </ScrollView>
+      </SafeAreaView>
     </LinearGradient>
   );
 }
@@ -232,7 +235,7 @@ const S = StyleSheet.create({
   root: { flex: 1 },
   topBar: {
     flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between',
-    paddingHorizontal: SPACING.lg, paddingTop: SPACING.xl, paddingBottom: SPACING.md,
+    paddingHorizontal: SPACING.lg, paddingTop: SPACING.sm, paddingBottom: SPACING.md,
   },
   backBtn: {
     width: 40, height: 40, borderRadius: 20,

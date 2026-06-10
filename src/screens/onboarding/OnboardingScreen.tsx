@@ -5,6 +5,7 @@ import {
 } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import { Ionicons } from '@expo/vector-icons';
+import { SafeAreaView } from 'react-native-safe-area-context';
 import { COLORS, FONTS, SPACING, BORDER_RADIUS } from '../../constants/theme';
 import { CYCLING_EXPLANATION, ExperienceLevel } from '../../constants/tips';
 import { useUserProfile, calculateVolume, AquariumProfile } from '../../hooks/useUserProfile';
@@ -801,6 +802,7 @@ export default function OnboardingScreen() {
 
   return (
     <LinearGradient colors={['#EDF6FB', '#F4FAFD', '#EDF6FB']} style={styles.screen}>
+      <SafeAreaView style={{ flex: 1 }} edges={['top', 'bottom']}>
       {/* Top bar */}
       <View style={styles.topBar}>
         {stepHistory.length > 1 && currentStep !== 'summary' ? (
@@ -820,6 +822,7 @@ export default function OnboardingScreen() {
       >
         {renderStep()}
       </ScrollView>
+      </SafeAreaView>
     </LinearGradient>
   );
 }
@@ -832,7 +835,7 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     paddingHorizontal: SPACING.md,
-    paddingTop: SPACING.xl,
+    paddingTop: SPACING.sm,
     paddingBottom: SPACING.sm,
     gap: SPACING.sm,
   },

@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { View, Text, ScrollView, TouchableOpacity, StyleSheet } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import { Ionicons } from '@expo/vector-icons';
+import { SafeAreaView } from 'react-native-safe-area-context';
 import { COLORS, FONTS, SPACING, BORDER_RADIUS } from '../../constants/theme';
 
 type Tab = 'privacy' | 'terms';
@@ -12,6 +13,7 @@ export default function LegalScreen({ navigation, route }: any) {
 
   return (
     <LinearGradient colors={['#EDF6FB', '#F4FAFD']} style={styles.root}>
+      <SafeAreaView style={{ flex: 1 }} edges={['top']}>
       <View style={styles.topBar}>
         <TouchableOpacity style={styles.backBtn} onPress={() => navigation.goBack()}>
           <Ionicons name="arrow-back" size={20} color={COLORS.text} />
@@ -42,6 +44,7 @@ export default function LegalScreen({ navigation, route }: any) {
       <ScrollView contentContainerStyle={styles.content} showsVerticalScrollIndicator={false}>
         {tab === 'privacy' ? <PrivacyContent /> : <TermsContent />}
       </ScrollView>
+      </SafeAreaView>
     </LinearGradient>
   );
 }
@@ -138,7 +141,7 @@ const styles = StyleSheet.create({
   root: { flex: 1 },
   topBar: {
     flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between',
-    paddingHorizontal: SPACING.lg, paddingTop: SPACING.xl, paddingBottom: SPACING.md,
+    paddingHorizontal: SPACING.lg, paddingTop: SPACING.sm, paddingBottom: SPACING.md,
   },
   backBtn: {
     width: 40, height: 40, borderRadius: 20,

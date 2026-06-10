@@ -3,6 +3,7 @@ import {
   View, Text, ScrollView, TouchableOpacity, StyleSheet,
   Modal, FlatList, TextInput, KeyboardAvoidingView, Platform, Alert,
 } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
 import { LinearGradient } from 'expo-linear-gradient';
 import { Ionicons } from '@expo/vector-icons';
 import { COLORS, FONTS, SPACING, BORDER_RADIUS, SHADOWS } from '../../constants/theme';
@@ -422,6 +423,7 @@ export default function BreedingScreen() {
 
   return (
     <LinearGradient colors={['#EDF6FB', '#F4FAFD']} style={styles.container}>
+      <SafeAreaView style={{ flex: 1 }} edges={['top']}>
 
       {/* ── Goal tabs ── */}
       <View style={styles.tabsBar}>
@@ -634,6 +636,7 @@ export default function BreedingScreen() {
         onClose={() => setLogType(null)}
         onSave={addLog}
       />
+      </SafeAreaView>
     </LinearGradient>
   );
 }

@@ -1,5 +1,6 @@
 import React, { useRef, useEffect, useState } from 'react';
 import { View, ActivityIndicator, TouchableOpacity, Animated, useWindowDimensions } from 'react-native';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import SplashScreen from '../screens/SplashScreen';
 import { createStackNavigator } from '@react-navigation/stack';
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
@@ -196,6 +197,7 @@ const TAB_ICONS: Record<string, [string, string]> = {
 
 function UserTabNavigator() {
   const { width } = useWindowDimensions();
+  const insets = useSafeAreaInsets();
   const factor = Math.min(1.25, Math.max(0.9, width / 375));
   const tabH = Math.round(56 * factor);
   const iconSize = Math.round(24 * factor);
@@ -213,9 +215,10 @@ function UserTabNavigator() {
             backgroundColor: COLORS.backgroundCard,
             borderTopColor: COLORS.border,
             borderTopWidth: 1,
-            paddingBottom: 4,
+            // Respeta la barra de gestos / home indicator (insets.bottom)
+            paddingBottom: 4 + insets.bottom,
             paddingTop: 4,
-            height: tabH,
+            height: tabH + insets.bottom,
           },
           tabBarActiveTintColor: COLORS.primary,
           tabBarInactiveTintColor: COLORS.textMuted,

@@ -134,7 +134,9 @@ export default function App() {
           <AquariumGalleryProvider>
           <AchievementsProvider>
           <UserProfileProvider>
-            <StatusBar style="light" backgroundColor="#071520" />
+            {/* Texto oscuro del status bar: la app es de tema claro (crítico en iOS,
+                donde style="light" haría invisible la hora sobre el fondo claro) */}
+            <StatusBar style="dark" />
             {recoveryMode ? (
               <ResetPasswordScreen onDone={() => setRecoveryMode(false)} />
             ) : (

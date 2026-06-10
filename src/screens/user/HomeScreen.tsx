@@ -2,6 +2,7 @@ import React, { useState, useMemo, useCallback } from 'react';
 import {
   View, Text, ScrollView, TouchableOpacity, StyleSheet, Modal, Image, RefreshControl,
 } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
 import RAnimated, { FadeInDown, FadeInRight, FadeInUp, Layout } from 'react-native-reanimated';
 import { LinearGradient } from 'expo-linear-gradient';
 import { Ionicons } from '@expo/vector-icons';
@@ -140,15 +141,18 @@ export default function HomeScreen({ navigation }: any) {
   if (isLoading) {
     return (
       <View style={styles.container}>
-        <ScrollView showsVerticalScrollIndicator={false}>
-          <HomeSkeleton />
-        </ScrollView>
+        <SafeAreaView style={{ flex: 1 }} edges={['top']}>
+          <ScrollView showsVerticalScrollIndicator={false}>
+            <HomeSkeleton />
+          </ScrollView>
+        </SafeAreaView>
       </View>
     );
   }
 
   return (
     <View style={styles.container}>
+      <SafeAreaView style={{ flex: 1 }} edges={['top']}>
 
       <RAnimated.ScrollView
         showsVerticalScrollIndicator={false}
@@ -440,6 +444,7 @@ export default function HomeScreen({ navigation }: any) {
       <Modal visible={showProfile} animationType="slide">
         <ProfileScreen onClose={() => setShowProfile(false)} />
       </Modal>
+      </SafeAreaView>
     </View>
   );
 }
@@ -453,7 +458,7 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     paddingHorizontal: SPACING.lg,
-    paddingTop: SPACING.xl,
+    paddingTop: SPACING.sm,
     paddingBottom: SPACING.sm,
   },
   greeting: { fontSize: 24, fontWeight: '800', fontFamily: FONTS.sansEb, color: COLORS.text, letterSpacing: -0.3 },

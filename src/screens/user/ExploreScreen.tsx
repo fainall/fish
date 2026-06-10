@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { View, Text, TouchableOpacity, StyleSheet } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
 import { LinearGradient } from 'expo-linear-gradient';
 import { Ionicons } from '@expo/vector-icons';
 import { COLORS, FONTS, SPACING, BORDER_RADIUS } from '../../constants/theme';
@@ -15,6 +16,7 @@ export default function ExploreScreen({ navigation }: any) {
 
   return (
     <View style={styles.root}>
+      <SafeAreaView style={{ flex: 1 }} edges={['top']}>
       {/* Top bar */}
       <LinearGradient colors={['#EDF6FB', '#F4FAFD']} style={styles.topSection}>
         <View style={styles.topBar}>
@@ -56,13 +58,14 @@ export default function ExploreScreen({ navigation }: any) {
           <FloraScreen embedded />
         )}
       </View>
+      </SafeAreaView>
     </View>
   );
 }
 
 const styles = StyleSheet.create({
   root: { flex: 1, backgroundColor: COLORS.background },
-  topSection: { paddingTop: SPACING.xl, paddingBottom: SPACING.sm },
+  topSection: { paddingTop: SPACING.sm, paddingBottom: SPACING.sm },
   topBar: {
     flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between',
     paddingHorizontal: SPACING.lg, paddingBottom: SPACING.sm,

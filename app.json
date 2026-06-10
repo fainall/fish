@@ -28,7 +28,7 @@
         "backgroundColor": "#000516"
       },
       "package": "com.aquaria.app",
-      "edgeToEdgeEnabled": false,
+      "edgeToEdgeEnabled": true,
       "permissions": [
         "CAMERA",
         "READ_EXTERNAL_STORAGE",

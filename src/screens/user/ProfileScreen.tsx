@@ -3,6 +3,7 @@ import {
   View, Text, ScrollView, TouchableOpacity, StyleSheet,
   TextInput, Alert, Image, ActivityIndicator, Platform, useWindowDimensions,
 } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
 import RAnimated, { FadeInDown, FadeInUp, FadeInRight } from 'react-native-reanimated';
 import { LinearGradient } from 'expo-linear-gradient';
 import { Ionicons } from '@expo/vector-icons';
@@ -142,6 +143,7 @@ export default function ProfileScreen({ onClose, navigation }: Props) {
 
   return (
     <LinearGradient colors={['#EDF6FB', '#F4FAFD']} style={styles.container}>
+      <SafeAreaView style={{ flex: 1 }} edges={['top']}>
 
       {/* ── Top bar ─────────────────────────────────────────────────────────── */}
       <View style={styles.topBar}>
@@ -447,6 +449,7 @@ export default function ProfileScreen({ onClose, navigation }: Props) {
         </Text>
 
       </ScrollView>
+      </SafeAreaView>
     </LinearGradient>
   );
 }
@@ -459,7 +462,7 @@ const styles = StyleSheet.create({
   // Top bar
   topBar: {
     flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between',
-    paddingHorizontal: SPACING.lg, paddingTop: SPACING.xl, paddingBottom: SPACING.md,
+    paddingHorizontal: SPACING.lg, paddingTop: SPACING.sm, paddingBottom: SPACING.md,
   },
   backBtn: {
     width: 40, height: 40, borderRadius: 20,

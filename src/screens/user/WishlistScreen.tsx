@@ -7,6 +7,7 @@ import React, { useMemo, useState } from 'react';
 import {
   View, Text, FlatList, TouchableOpacity, StyleSheet, ScrollView, Modal, TextInput,
 } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
 import { FishImage as Image } from '../../components/FishImage';
 import { LinearGradient } from 'expo-linear-gradient';
 import Animated, { FadeInRight, FadeOutLeft, Layout } from 'react-native-reanimated';
@@ -116,6 +117,7 @@ export default function WishlistScreen({ navigation }: any) {
 
   return (
     <LinearGradient colors={['#EDF6FB', '#F4FAFD']} style={S.root}>
+      <SafeAreaView style={{ flex: 1 }} edges={['top']}>
       {/* Top bar */}
       <View style={S.topBar}>
         <TouchableOpacity style={S.backBtn} onPress={() => navigation?.goBack()}>
@@ -256,6 +258,7 @@ export default function WishlistScreen({ navigation }: any) {
           }}
         />
       )}
+      </SafeAreaView>
     </LinearGradient>
   );
 }
@@ -265,7 +268,7 @@ const S = StyleSheet.create({
 
   topBar: {
     flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between',
-    paddingHorizontal: SPACING.lg, paddingTop: SPACING.xl, paddingBottom: SPACING.md,
+    paddingHorizontal: SPACING.lg, paddingTop: SPACING.sm, paddingBottom: SPACING.md,
   },
   backBtn: {
     width: 40, height: 40, borderRadius: 20,

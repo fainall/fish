@@ -8,6 +8,7 @@ import { LinearGradient } from 'expo-linear-gradient';
 import { Ionicons } from '@expo/vector-icons';
 import * as ImagePicker from 'expo-image-picker';
 import { File } from 'expo-file-system';
+import { SafeAreaView } from 'react-native-safe-area-context';
 import { COLORS, FONTS, SPACING, BORDER_RADIUS } from '../../constants/theme';
 import { useAuth } from '../../hooks/useAuth';
 import { useFishDatabase, EditableFish } from '../../hooks/useFishDatabase';
@@ -278,6 +279,7 @@ export default function AdminDashboardScreen() {
   //
   return (
     <LinearGradient colors={['#EDF6FB', '#F4FAFD']} style={S.root}>
+      <SafeAreaView style={{ flex: 1 }} edges={['top', 'bottom']}>
 
       {/* ── Header ─────────────────────────────────────────────────────── */}
       <View style={S.header}>
@@ -1145,6 +1147,7 @@ export default function AdminDashboardScreen() {
           </View>
         </KeyboardAvoidingView>
       </Modal>
+      </SafeAreaView>
     </LinearGradient>
   );
 }
