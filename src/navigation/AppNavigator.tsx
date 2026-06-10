@@ -15,6 +15,7 @@ import AchievementToast from '../components/AchievementToast';
 import LoginScreen from '../screens/auth/LoginScreen';
 import RegisterScreen from '../screens/auth/RegisterScreen';
 import ForgotPasswordScreen from '../screens/auth/ForgotPasswordScreen';
+import ResetPasswordScreen from '../screens/auth/ResetPasswordScreen';
 
 // Onboarding
 import OnboardingScreen from '../screens/onboarding/OnboardingScreen';
@@ -174,6 +175,9 @@ function ProfileStackNavigator() {
       <ProfileStack.Screen name="Chat" component={ChatScreen} />
       <ProfileStack.Screen name="Legal" component={LegalScreen} />
       <ProfileStack.Screen name="Support" component={SupportScreen} />
+      <ProfileStack.Screen name="ChangePassword">
+        {(props) => <ResetPasswordScreen onDone={() => props.navigation.goBack()} />}
+      </ProfileStack.Screen>
     </ProfileStack.Navigator>
   );
 }

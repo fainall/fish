@@ -1,6 +1,6 @@
 import 'react-native-gesture-handler';
 import React, { useEffect, useRef, useState } from 'react';
-import { View, ActivityIndicator, Linking } from 'react-native';
+import { View, ActivityIndicator, Linking, Alert } from 'react-native';
 import * as Updates from 'expo-updates';
 import { initSentry } from './src/services/sentry';
 import { logScreenView } from './src/services/analytics';
@@ -53,6 +53,8 @@ function parseRecoveryTokens(url: string) {
     access_token:  params.access_token,
     refresh_token: params.refresh_token,
     type:          params.type,
+    code:          params.code,        // flujo PKCE
+    error_code:    params.error_code,  // enlace expirado / ya usado
   };
 }
 
@@ -78,16 +80,31 @@ export default function App() {
   useEffect(() => {
     const handleUrl = async (url: string | null) => {
       if (!url || !url.includes('reset-password')) return;
-      const { access_token, refresh_token, type } = parseRecoveryTokens(url);
-      if (type === 'recovery' && access_token) {
-        try {
+      const { access_token, refresh_token, type, code, error_code } = parseRecoveryTokens(url);
+
+      // Enlace expirado o ya consumido (p. ej. el escáner del correo lo "abrió"
+      // antes; son de un solo uso) → avisar en vez de fallar en silencio.
+      if (error_code || (!access_token && !code)) {
+        console.warn('[Recovery] enlace sin tokens:', url.slice(0, 120), error_code);
+        Alert.alert(
+          'Enlace no válido o expirado',
+          'Este enlace de recuperación ya fue usado o expiró. Vuelve a "¿Olvidaste tu contraseña?" y solicita uno nuevo.',
+        );
+        return;
+      }
+
+      try {
+        if (code) {
+          // Flujo PKCE: intercambiar el código por sesión
+          await supabase.auth.exchangeCodeForSession(code);
+        } else if (type === 'recovery' && access_token) {
           await supabase.auth.setSession({
             access_token,
             refresh_token: refresh_token ?? '',
           });
-        } catch (e) { console.warn('[Recovery] setSession failed:', e); }
-        setRecoveryMode(true);
-      }
+        }
+      } catch (e) { console.warn('[Recovery] establecer sesión falló:', e); }
+      setRecoveryMode(true);
     };
     // Arranque en frío (la app se abrió desde el enlace)
     Linking.getInitialURL().then(handleUrl).catch(() => {});

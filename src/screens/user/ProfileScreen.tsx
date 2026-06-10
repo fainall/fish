@@ -381,6 +381,18 @@ export default function ProfileScreen({ onClose, navigation }: Props) {
         >
           <Text style={styles.formLabel}>Cuenta</Text>
           <View style={styles.actionsCard}>
+            {navigation && (
+              <>
+                <TouchableOpacity style={styles.actionRow} onPress={() => navigation.navigate('ChangePassword')}>
+                  <View style={[styles.actionIcon, { backgroundColor: COLORS.primary + '20' }]}>
+                    <Ionicons name="key-outline" size={18} color={COLORS.primary} />
+                  </View>
+                  <Text style={[styles.actionText, { color: COLORS.text }]}>Cambiar contraseña</Text>
+                  <Ionicons name="chevron-forward" size={16} color={COLORS.textMuted} />
+                </TouchableOpacity>
+                <View style={styles.actionDivider} />
+              </>
+            )}
             <TouchableOpacity style={styles.actionRow} onPress={confirmReset}>
               <View style={[styles.actionIcon, { backgroundColor: COLORS.warning + '20' }]}>
                 <Ionicons name="refresh-outline" size={18} color={COLORS.warning} />

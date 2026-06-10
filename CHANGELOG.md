@@ -4,6 +4,13 @@ Todas las mejoras, features y bugfixes documentados por versión.
 
 ---
 
+## [1.0.0] — 2026-06-10 (OTA v23)
+
+### Cambiar contraseña dentro de la app + recuperación robusta (v23)
+- **Nueva opción "Cambiar contraseña"** en Perfil → Cuenta (ruta `ChangePassword` en el ProfileStack, reutiliza `ResetPasswordScreen` con `updateUser`). Ya no depende del correo para cambiar la clave estando logueado.
+- **Handler del deep link endurecido** (`App.tsx`): si el enlace del correo llega **expirado o ya consumido** (los escáneres de Gmail a veces "abren" los enlaces de un solo uso antes que el usuario), ahora muestra un aviso claro pidiendo solicitar uno nuevo — antes fallaba en silencio y la app abría normal, pareciendo que "no pasaba nada". Soporta además el formato PKCE (`?code=` → `exchangeCodeForSession`).
+- Contexto: el deep link YA abría la app (esquema `aquaria://` confirmado en el build), pero la pantalla de nueva contraseña no aparecía — la causa más probable es el enlace consumido/expirado, ahora visible con el aviso.
+
 ## [1.0.0] — 2026-06-10 (config Supabase)
 
 ### Fix — Recuperación de contraseña no funcionaba (2 eslabones rotos)
