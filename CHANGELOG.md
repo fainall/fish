@@ -4,6 +4,11 @@ Todas las mejoras, features y bugfixes documentados por versión.
 
 ---
 
+## [1.0.0] — 2026-06-10 (OTA v25)
+
+### Fix — el campo de código solo aceptaba 6 dígitos, el correo envía 8 (v25)
+- El largo del OTP es **configurable en Supabase** (este proyecto envía 8 dígitos) y el campo estaba fijado a 6 → no se podía terminar de escribir. Ahora acepta **6–10 dígitos** (maxLength 10, botón habilitado desde 6) y los textos dicen "código de verificación" sin asumir el largo.
+
 ## [1.0.0] — 2026-06-10 (OTA v24)
 
 ### Recuperación de contraseña por CÓDIGO de 6 dígitos (v24) — flujo definitivo

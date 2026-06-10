@@ -31,8 +31,9 @@ export default function ForgotPasswordScreen({ navigation }: any) {
 
   const handleVerifyCode = async () => {
     const c = code.trim();
-    if (c.length !== 6) {
-      Alert.alert('Código incompleto', 'Escribe los 6 dígitos del código que te llegó por correo.');
+    // El largo del OTP es configurable en Supabase (6-10 dígitos) → aceptar rango
+    if (c.length < 6) {
+      Alert.alert('Código incompleto', 'Escribe el código completo que te llegó por correo.');
       return;
     }
     setVerifying(true);
@@ -110,30 +111,30 @@ export default function ForgotPasswordScreen({ navigation }: any) {
                 <Text style={styles.successTitle}>Revisa tu correo</Text>
                 <Text style={styles.successText}>
                   Si <Text style={{ fontFamily: FONTS.sansBd }}>{email.trim().toLowerCase()}</Text> tiene una cuenta,
-                  te llegará un <Text style={{ fontFamily: FONTS.sansBd }}>código de 6 dígitos</Text>.
+                  te llegará un <Text style={{ fontFamily: FONTS.sansBd }}>código de verificación</Text>.
                   Escríbelo aquí (revisa también spam).
                 </Text>
               </View>
 
-              <Text style={styles.label}>Código de 6 dígitos</Text>
+              <Text style={styles.label}>Código del correo</Text>
               <View style={styles.inputContainer}>
                 <Ionicons name="keypad-outline" size={20} color={COLORS.textMuted} style={styles.inputIcon} />
                 <TextInput
                   style={[styles.input, styles.codeInput]}
                   value={code}
                   onChangeText={v => setCode(v.replace(/[^0-9]/g, ''))}
-                  placeholder="123456"
+                  placeholder="12345678"
                   placeholderTextColor={COLORS.textMuted}
                   keyboardType="number-pad"
-                  maxLength={6}
+                  maxLength={10}
                   autoFocus
                 />
               </View>
 
               <TouchableOpacity
-                style={[styles.loginButton, (verifying || code.length !== 6) && styles.btnDisabled]}
+                style={[styles.loginButton, (verifying || code.length < 6) && styles.btnDisabled]}
                 onPress={handleVerifyCode}
-                disabled={verifying || code.length !== 6}
+                disabled={verifying || code.length < 6}
               >
                 {verifying
                   ? <ActivityIndicator color={COLORS.white} />
@@ -210,7 +211,7 @@ const styles = StyleSheet.create({
   },
   inputIcon: { marginRight: SPACING.sm },
   input: { flex: 1, color: COLORS.text, paddingVertical: 14, fontSize: 15, fontFamily: FONTS.sans },
-  codeInput: { fontSize: 22, letterSpacing: 8, fontFamily: FONTS.sansBd },
+  codeInput: { fontSize: 20, letterSpacing: 4, fontFamily: FONTS.sansBd },
   loginButton: {
     backgroundColor: COLORS.primary, borderRadius: BORDER_RADIUS.md,
     padding: 16, alignItems: 'center', marginTop: SPACING.lg,
