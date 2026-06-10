@@ -5,6 +5,7 @@ import * as Updates from 'expo-updates';
 import { initSentry } from './src/services/sentry';
 import { logScreenView } from './src/services/analytics';
 import { supabase } from './src/services/supabase';
+import { registerRecoveryListener } from './src/services/recoveryBus';
 import ErrorBoundary from './src/components/ErrorBoundary';
 import ResetPasswordScreen from './src/screens/auth/ResetPasswordScreen';
 
@@ -77,6 +78,14 @@ export default function App() {
 
   // ── Recuperación de contraseña por deep link (aquaria://reset-password) ──────
   const [recoveryMode, setRecoveryMode] = useState(false);
+
+  // Bus: permite a ForgotPasswordScreen activar el modo recuperación tras
+  // verificar el código OTP del correo (flujo sin deep link).
+  useEffect(() => {
+    registerRecoveryListener(setRecoveryMode);
+    return () => registerRecoveryListener(null);
+  }, []);
+
   useEffect(() => {
     const handleUrl = async (url: string | null) => {
       if (!url || !url.includes('reset-password')) return;

@@ -4,6 +4,14 @@ Todas las mejoras, features y bugfixes documentados por versión.
 
 ---
 
+## [1.0.0] — 2026-06-10 (OTA v24)
+
+### Recuperación de contraseña por CÓDIGO de 6 dígitos (v24) — flujo definitivo
+- **El correo ahora trae un código de 6 dígitos** (`{{ .Token }}`) que el usuario escribe EN la app: ForgotPassword muestra el campo de código tras enviar → `verifyOtp(type: 'recovery')` → al validar se abre "Nueva contraseña" (vía nuevo `recoveryBus` que activa el modo recuperación global de App.tsx).
+- **Por qué:** el flujo por enlace resultó poco fiable en móvil — los enlaces de un solo uso los consumen los escáneres de Gmail antes del tap (el usuario llegaba a la app con su sesión normal y sin pantalla de cambio). El código no puede ser "gastado" por un escáner. El deep link se mantiene como atajo si llega vivo.
+- **Plantilla de correo rediseñada** (dashboard): código grande y protagonista, asunto "🔑 Tu código para restablecer la contraseña - Aquaria", marca Aquaria + remitente soporte@severeynfish.cl.
+- Nuevos: `src/services/recoveryBus.ts`; ForgotPasswordScreen con paso de verificación de código.
+
 ## [1.0.0] — 2026-06-10 (OTA v23)
 
 ### Cambiar contraseña dentro de la app + recuperación robusta (v23)

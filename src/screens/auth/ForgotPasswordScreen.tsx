@@ -1,7 +1,13 @@
 /**
- * ForgotPasswordScreen — Recuperación de contraseña.
- * Envía un correo de recuperación vía Supabase (resetPasswordForEmail).
- * El usuario sigue el enlace del email para fijar una nueva contraseña.
+ * ForgotPasswordScreen — Recuperación de contraseña por CÓDIGO (OTP).
+ *
+ * Flujo: el usuario pide recuperación → el correo trae un código de 6 dígitos
+ * → lo escribe AQUÍ → verifyOtp establece la sesión → se abre la pantalla
+ * "Nueva contraseña" (modo recuperación global vía recoveryBus).
+ *
+ * Este flujo NO depende del deep link del correo (los enlaces de un solo uso
+ * los consumen los escáneres de Gmail con frecuencia). El enlace del correo
+ * se mantiene como atajo secundario, pero el código siempre funciona.
  */
 import React, { useState } from 'react';
 import {
@@ -14,11 +20,40 @@ import { Ionicons } from '@expo/vector-icons';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { COLORS, FONTS, SPACING, BORDER_RADIUS } from '../../constants/theme';
 import { supabase, IS_DEMO_MODE } from '../../services/supabase';
+import { triggerRecoveryMode } from '../../services/recoveryBus';
 
 export default function ForgotPasswordScreen({ navigation }: any) {
-  const [email, setEmail]     = useState('');
-  const [loading, setLoading] = useState(false);
-  const [sent, setSent]       = useState(false);
+  const [email, setEmail]         = useState('');
+  const [loading, setLoading]     = useState(false);
+  const [sent, setSent]           = useState(false);
+  const [code, setCode]           = useState('');
+  const [verifying, setVerifying] = useState(false);
+
+  const handleVerifyCode = async () => {
+    const c = code.trim();
+    if (c.length !== 6) {
+      Alert.alert('Código incompleto', 'Escribe los 6 dígitos del código que te llegó por correo.');
+      return;
+    }
+    setVerifying(true);
+    try {
+      const { error } = await supabase.auth.verifyOtp({
+        email: email.trim().toLowerCase(),
+        token: c,
+        type: 'recovery',
+      });
+      if (error) {
+        Alert.alert('Código no válido', 'El código es incorrecto o expiró. Toca "Reenviar código" para recibir uno nuevo.');
+        return;
+      }
+      // Sesión de recuperación establecida → abrir pantalla "Nueva contraseña"
+      triggerRecoveryMode();
+    } catch (e: any) {
+      Alert.alert('Error', e?.message ?? 'No se pudo verificar el código.');
+    } finally {
+      setVerifying(false);
+    }
+  };
 
   const handleReset = async () => {
     const e = email.trim().toLowerCase();
@@ -71,15 +106,42 @@ export default function ForgotPasswordScreen({ navigation }: any) {
           {sent ? (
             <View style={styles.form}>
               <View style={styles.successBox}>
-                <Ionicons name="checkmark-circle" size={40} color={COLORS.success} />
+                <Ionicons name="mail-unread-outline" size={40} color={COLORS.primary} />
                 <Text style={styles.successTitle}>Revisa tu correo</Text>
                 <Text style={styles.successText}>
                   Si <Text style={{ fontFamily: FONTS.sansBd }}>{email.trim().toLowerCase()}</Text> tiene una cuenta,
-                  recibirás un enlace para restablecer tu contraseña. Revisa también la carpeta de spam.
+                  te llegará un <Text style={{ fontFamily: FONTS.sansBd }}>código de 6 dígitos</Text>.
+                  Escríbelo aquí (revisa también spam).
                 </Text>
               </View>
-              <TouchableOpacity style={styles.loginButton} onPress={() => navigation.goBack()}>
-                <Text style={styles.loginButtonText}>Volver a iniciar sesión</Text>
+
+              <Text style={styles.label}>Código de 6 dígitos</Text>
+              <View style={styles.inputContainer}>
+                <Ionicons name="keypad-outline" size={20} color={COLORS.textMuted} style={styles.inputIcon} />
+                <TextInput
+                  style={[styles.input, styles.codeInput]}
+                  value={code}
+                  onChangeText={v => setCode(v.replace(/[^0-9]/g, ''))}
+                  placeholder="123456"
+                  placeholderTextColor={COLORS.textMuted}
+                  keyboardType="number-pad"
+                  maxLength={6}
+                  autoFocus
+                />
+              </View>
+
+              <TouchableOpacity
+                style={[styles.loginButton, (verifying || code.length !== 6) && styles.btnDisabled]}
+                onPress={handleVerifyCode}
+                disabled={verifying || code.length !== 6}
+              >
+                {verifying
+                  ? <ActivityIndicator color={COLORS.white} />
+                  : <Text style={styles.loginButtonText}>Verificar código</Text>}
+              </TouchableOpacity>
+
+              <TouchableOpacity onPress={() => { setSent(false); setCode(''); }} style={styles.registerLink}>
+                <Text style={styles.registerText}>Reenviar código / corregir correo</Text>
               </TouchableOpacity>
             </View>
           ) : (
@@ -148,6 +210,7 @@ const styles = StyleSheet.create({
   },
   inputIcon: { marginRight: SPACING.sm },
   input: { flex: 1, color: COLORS.text, paddingVertical: 14, fontSize: 15, fontFamily: FONTS.sans },
+  codeInput: { fontSize: 22, letterSpacing: 8, fontFamily: FONTS.sansBd },
   loginButton: {
     backgroundColor: COLORS.primary, borderRadius: BORDER_RADIUS.md,
     padding: 16, alignItems: 'center', marginTop: SPACING.lg,
