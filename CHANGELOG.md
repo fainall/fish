@@ -4,6 +4,15 @@ Todas las mejoras, features y bugfixes documentados por versión.
 
 ---
 
+## [1.0.0] — 2026-06-10 (config Supabase)
+
+### Fix — Recuperación de contraseña no funcionaba (2 eslabones rotos)
+- **Causa 1 — typo en el dominio del SMTP:** se configuró `mail.severynfish.cl` / `soporte@severynfish.cl` (falta una "e"; el dominio real es `severeynfish.cl`, como el apellido Severeyn). Ese host no existe en DNS → Supabase devolvía `500 Error sending recovery email` → **ningún correo salía**. Corregido en Auth → Emails → SMTP (sender, host y username); la contraseña guardada sobrevivió. Verificado con `POST /auth/v1/recover` → **HTTP 200** y correo real enviado desde "Aquaria <soporte@severeynfish.cl>".
+- **Causa 2 — Redirect URL nunca agregado:** la lista de Redirect URLs estaba VACÍA, así que el `redirectTo: aquaria://reset-password` se ignoraba y el enlace del correo caía al Site URL (`http://localhost:3000` → página muerta). Agregado `aquaria://reset-password` a Redirect URLs.
+- **Extra:** Site URL `http://localhost:3000` → `https://severeynfish.cl` (fallback de TODOS los correos de auth, incluida confirmación de registro).
+- Diagnóstico: prueba de envío por REST (aisló el 500), `nslookup` de ambas variantes del dominio (descubrió el typo) y test de conexión SMTP a los puertos 465/587 (el servidor `s510.v2nets.com` funcionaba perfecto — el problema era solo el nombre).
+- Nota: el deep link requiere que el build instalado tenga registrado el esquema `aquaria://` (se añadió en el commit del rebrand, el mismo día del último build — por confirmar al probar; si no abre, quedará resuelto con el próximo build nativo).
+
 ## [1.0.0] — 2026-06-08 (OTA v22)
 
 ### Adaptación a window insets — notch, Dynamic Island y barra de gestos (v22)
