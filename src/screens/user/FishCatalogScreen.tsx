@@ -892,14 +892,14 @@ export default function FishCatalogScreen({ embedded, navigation }: { embedded?:
     return getFishForStyle(styleId, ALL_FISH)
       .map(f => ({ fish: f, score: styleFitScore(styleId, f) }))
       .sort((a, b) => b.score - a.score);
-  }, [styleId]);
+  }, [styleId, ALL_FISH]);
 
   // Origins from current data — for the dropdown
   const originOptions = useMemo(() => {
     const set = new Set<string>();
     ALL_FISH.forEach(f => { if (f.origin) set.add(f.origin); });
     return ['all', ...Array.from(set).sort()];
-  }, []);
+  }, [ALL_FISH]);
 
   // Full catalog filtered (advanced)
   const filteredFish = useMemo(() => {
@@ -923,7 +923,7 @@ export default function FishCatalogScreen({ embedded, navigation }: { embedded?:
       const matchSrc  = sourcing   === 'all' || !fish.sourcing   || fish.sourcing   === sourcing;
       return matchSearch && matchWater && matchTemp && matchPh && matchSize && matchAgg && matchOrig && matchTank && matchDiff && matchSrc;
     });
-  }, [search, waterFilter, tempRange, phRange, sizeMax, aggression, origin, tankMin, difficulty, sourcing]);
+  }, [ALL_FISH, search, waterFilter, tempRange, phRange, sizeMax, aggression, origin, tankMin, difficulty, sourcing]);
 
   // Count of active advanced filters (for the badge on the toggle button)
   const activeAdvancedCount = useMemo(() => {

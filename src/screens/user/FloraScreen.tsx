@@ -1057,8 +1057,10 @@ export default function FloraScreen({ embedded }: { embedded?: boolean } = {}) {
           {/* Cards por nutriente */}
           {CORR_PRODUCTS.map(prod => {
             const state   = corrValues[prod.id];
-            const current = parseFloat(state.current);
-            const target  = parseFloat(state.target);
+            // Normalizar coma decimal (teclado es-ES da "0,5") antes de parsear,
+            // si no parseFloat("0,5")=0 → recomienda sobredosis de fertilizante.
+            const current = parseFloat((state.current || '').replace(',', '.'));
+            const target  = parseFloat((state.target  || '').replace(',', '.'));
             const brand   = prod.brands[state.brandIdx];
             const diff    = (!isNaN(current) && !isNaN(target)) ? target - current : null;
             const mlNeeded = (diff !== null && diff > 0 && brand)

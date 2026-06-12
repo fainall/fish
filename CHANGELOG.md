@@ -4,6 +4,22 @@ Todas las mejoras, features y bugfixes documentados por versión.
 
 ---
 
+## [1.0.0] — 2026-06-10 (OTA v26 · auditoría, tanda 1)
+
+### Fixes de la auditoría (tanda 1 — código verificado)
+- **Tareas recurrentes se perdían** (`useTasks`): la siguiente ocurrencia se insertaba con un id local `task-…` en columna UUID → insert fallaba en silencio y desaparecía al recargar. Ahora se inserta sin ese id (Postgres genera el UUID).
+- **Catálogo de peces congelado** (`FishCatalogScreen`): 3 `useMemo` (filteredFish, recommendedFish, originOptions) no tenían `ALL_FISH` en sus dependencias → se quedaban con datos locales viejos tras sincronizar con Supabase. Añadido a las deps.
+- **Sobredosis de fertilizante** (`FloraScreen`): la calculadora "Por testeo" no normalizaba la coma decimal (teclado es-ES da "0,5") → `parseFloat("0,5")=0`. Ahora normaliza coma→punto antes de parsear.
+- **Tarjeta "Tareas" del Home no navegaba**: el `TouchableOpacity` interno del StatPill capturaba el toque y el `onPress` externo nunca disparaba. StatPill ahora acepta `onPress` propio.
+- **Iconos de logros en Comunidad se veían como texto** ("water", "fish"…): eran nombres de Ionicons renderizados dentro de `<Text>`. Cambiados a `<Ionicons>` en las 4 ubicaciones (banner de post + selector de logros).
+
+### Seguridad — SQL preparado (pendiente de ejecutar)
+- `supabase/security_fixes.sql`: cierra la **escalada a admin** (trigger que bloquea cambios de `role` desde el cliente) y la **fuga de emails** (lectura de `users` restringida a la propia fila + admin vía `is_admin()`). ⚠️ Correr en el SQL Editor.
+
+### Notas
+- Un hallazgo del revisor era falso positivo (MIME `image/png` ya estaba correcto); verificado antes de tocar.
+- Pendientes de tanda 2 (requieren más verificación o son SQL): bug UUID de `useBreeding` (verificar esquema desplegado), rate-limit de la IA, decimales en editor admin, onboarding avanzado, pull-to-refresh falsos, posts/comentarios fantasma.
+
 ## [1.0.0] — 2026-06-10 (OTA v25)
 
 ### Fix — el campo de código solo aceptaba 6 dígitos, el correo envía 8 (v25)

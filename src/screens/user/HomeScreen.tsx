@@ -35,8 +35,8 @@ import ProfileScreen from './ProfileScreen';
 
 
 // ── Animated stat pill ────────────────────────────────────────────────────────
-interface StatPillProps { label: string; value: string; icon: string; color: string; index: number; }
-const StatPill = ({ label, value, icon, color, index }: StatPillProps) => {
+interface StatPillProps { label: string; value: string; icon: string; color: string; index: number; onPress?: () => void; }
+const StatPill = ({ label, value, icon, color, index, onPress }: StatPillProps) => {
   const { style, onPressIn, onPressOut } = useScalePress(0.93);
   return (
     <RAnimated.View
@@ -44,7 +44,8 @@ const StatPill = ({ label, value, icon, color, index }: StatPillProps) => {
       style={style}
     >
       <TouchableOpacity
-        activeOpacity={1}
+        activeOpacity={onPress ? 0.8 : 1}
+        onPress={onPress}
         onPressIn={onPressIn}
         onPressOut={onPressOut}
         style={styles.statPill}
@@ -369,15 +370,14 @@ export default function HomeScreen({ navigation }: any) {
           <View style={styles.statsRow}>
             <StatPill label="Acuarios" value={String(aquariums.length)} icon="cube-outline" color={COLORS.primary} index={0} />
             <StatPill label="Peces" value={totalFish > 0 ? String(totalFish) : '—'} icon="fish-outline" color={COLORS.success} index={1} />
-            <TouchableOpacity onPress={() => navigation.navigate('Tasks')} activeOpacity={0.7}>
-              <StatPill
-                label="Tareas"
-                value={overdueCount > 0 ? `! ${overdueCount}` : String(pendingCount)}
-                icon={overdueCount > 0 ? 'warning-outline' : 'calendar-outline'}
-                color={overdueCount > 0 ? COLORS.error : COLORS.warning}
-                index={2}
-              />
-            </TouchableOpacity>
+            <StatPill
+              label="Tareas"
+              value={overdueCount > 0 ? `! ${overdueCount}` : String(pendingCount)}
+              icon={overdueCount > 0 ? 'warning-outline' : 'calendar-outline'}
+              color={overdueCount > 0 ? COLORS.error : COLORS.warning}
+              index={2}
+              onPress={() => navigation.navigate('Tasks')}
+            />
             <StatPill label="Logros" value={`${unlocked.length}/${ACHIEVEMENTS.length}`} icon="trophy-outline" color="#f59e0b" index={3} />
           </View>
         </RAnimated.View>

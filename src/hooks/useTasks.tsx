@@ -167,8 +167,11 @@ export function TasksProvider({ children }: { children: React.ReactNode }) {
             await supabase.from('aquarium_tasks')
               .update({ completed: true, completed_at: updatedCurrent.completed_at })
               .eq('id', id);
+            // NO enviar el id local `task-...` (la columna es UUID → insert fallaba
+            // en silencio y la siguiente ocurrencia se perdía al recargar).
+            const { id: _omitId, completed_at: _omitCa, ...nextInsert } = nextTask;
             await supabase.from('aquarium_tasks')
-              .insert({ ...nextTask, user_id: user.id });
+              .insert({ ...nextInsert, user_id: user.id });
           } catch (e) { console.warn('[Tasks] Op failed:', e); }
         }
       }

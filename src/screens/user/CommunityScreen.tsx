@@ -70,7 +70,7 @@ function PostCard({ post, currentUserId, onLike, onOpenComments, onShare, onUser
       {/* Achievement banner — visually pops the post */}
       {achievement && (
         <View style={styles.achBanner}>
-          <Text style={styles.achBannerEmoji}>{(achievement as any).icon ?? '🏆'}</Text>
+          <Ionicons name={((achievement as any).icon ?? 'trophy')} size={26} color={COLORS.warning} style={styles.achBannerEmoji} />
           <View style={{ flex: 1 }}>
             <Text style={styles.achBannerLabel}>🏆 Logro desbloqueado</Text>
             <Text style={styles.achBannerTitle}>{achievement.title}</Text>
@@ -487,7 +487,7 @@ function CreatePostModal({ visible, onClose, onSubmit, userName, initialAchievem
                 <Text style={styles.createLabel}>🏆 Adjuntar logro (opcional)</Text>
                 {attachedAchievement ? (
                   <View style={styles.attachedAchBox}>
-                    <Text style={{ fontSize: 28 }}>{(attachedAchievement as any).icon ?? '🏆'}</Text>
+                    <Ionicons name={((attachedAchievement as any).icon ?? 'trophy')} size={26} color={COLORS.warning} />
                     <View style={{ flex: 1 }}>
                       <Text style={styles.attachedAchTitle}>{attachedAchievement.title}</Text>
                       <Text style={styles.attachedAchDesc} numberOfLines={2}>{attachedAchievement.description}</Text>
@@ -506,7 +506,7 @@ function CreatePostModal({ visible, onClose, onSubmit, userName, initialAchievem
                         style={styles.achPickerItem}
                         onPress={() => setAchievementId(a.id)}
                       >
-                        <Text style={{ fontSize: 28 }}>{(a as any).icon ?? '🏆'}</Text>
+                        <Ionicons name={((a as any).icon ?? 'trophy')} size={26} color={COLORS.warning} />
                         <Text style={styles.achPickerName} numberOfLines={1}>{a.title}</Text>
                       </TouchableOpacity>
                     ))}
@@ -716,7 +716,7 @@ export default function CommunityScreen() {
                       style={styles.shareLogroItem}
                       onPress={() => { setShareAchId(a.id); setShowCreate(true); }}
                     >
-                      <Text style={{ fontSize: 24 }}>{(a as any).icon ?? '🏆'}</Text>
+                      <Ionicons name={((a as any).icon ?? 'trophy')} size={22} color={COLORS.warning} />
                       <Text style={styles.shareLogroName} numberOfLines={1}>{a.title}</Text>
                       <View style={styles.shareLogroBtn}>
                         <Text style={styles.shareLogroBtnText}>Compartir</Text>
