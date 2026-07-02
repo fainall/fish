@@ -59,41 +59,54 @@ function Paragraph({ children }: { children: string }) {
 function PrivacyContent() {
   return (
     <View>
-      <Text style={styles.lastUpdated}>Última actualización: 10 de mayo de 2026</Text>
+      <Text style={styles.lastUpdated}>Última actualización: 10 de junio de 2026</Text>
 
       <SectionTitle>1. Información que Recopilamos</SectionTitle>
       <Paragraph>Aquaria recopila la siguiente información cuando utilizas nuestra aplicación:</Paragraph>
       <Paragraph>• Información de cuenta: correo electrónico y nombre al registrarte.</Paragraph>
       <Paragraph>• Datos de acuarios: información sobre tus acuarios, peces, parámetros del agua y tareas que registras voluntariamente.</Paragraph>
-      <Paragraph>• Fotos: imágenes que subes a tu galería o perfil, almacenadas de forma segura.</Paragraph>
-      <Paragraph>• Datos de uso: interacciones con la app para mejorar la experiencia (no compartidos con terceros).</Paragraph>
+      <Paragraph>• Fotos: imágenes que subes a tu galería, perfil o a un reporte de soporte, almacenadas de forma segura.</Paragraph>
+      <Paragraph>• Contenido de la comunidad: publicaciones y comentarios que decides compartir públicamente con otros usuarios.</Paragraph>
+      <Paragraph>• Mensajes del asistente y de soporte: el texto que escribes en el chat de asistencia y en los reportes de errores.</Paragraph>
+      <Paragraph>• Datos de uso y diagnóstico: qué pantallas visitas (analítica interna) e informes de errores para mejorar la app.</Paragraph>
 
       <SectionTitle>2. Cómo Usamos tu Información</SectionTitle>
-      <Paragraph>Utilizamos tu información exclusivamente para:</Paragraph>
+      <Paragraph>Utilizamos tu información para:</Paragraph>
       <Paragraph>• Proveer y personalizar el servicio de gestión de acuarios.</Paragraph>
-      <Paragraph>• Generar alertas inteligentes y recomendaciones basadas en tus datos.</Paragraph>
-      <Paragraph>• Enviar notificaciones sobre tareas de mantenimiento pendientes.</Paragraph>
-      <Paragraph>• Mejorar la aplicación y corregir errores.</Paragraph>
+      <Paragraph>• Generar alertas y recomendaciones basadas en tus datos.</Paragraph>
+      <Paragraph>• Responder tus preguntas mediante el asistente con inteligencia artificial.</Paragraph>
+      <Paragraph>• Enviar notificaciones sobre tareas de mantenimiento y correos de tu cuenta (p. ej. recuperación de contraseña).</Paragraph>
+      <Paragraph>• Mejorar la aplicación, medir su uso y corregir errores.</Paragraph>
 
-      <SectionTitle>3. Almacenamiento y Seguridad</SectionTitle>
-      <Paragraph>Tus datos se almacenan de forma segura utilizando Supabase con encriptación en tránsito y en reposo. Las contraseñas se almacenan con hash bcrypt y nunca se guardan en texto plano.</Paragraph>
-      <Paragraph>No vendemos, compartimos ni transferimos tu información personal a terceros bajo ninguna circunstancia.</Paragraph>
+      <SectionTitle>3. Asistente con Inteligencia Artificial</SectionTitle>
+      <Paragraph>Aquaria incluye un asistente que usa inteligencia artificial de un proveedor externo (OpenAI) para responder tus preguntas sobre acuarismo.</Paragraph>
+      <Paragraph>Cuando usas el chat, el texto de tu pregunta (y los mensajes recientes de esa conversación) se envían a los servidores de OpenAI, ubicados en Estados Unidos, para generar la respuesta. No enviamos tu correo, contraseña ni otros datos personales al proveedor de IA.</Paragraph>
+      <Paragraph>El asistente ofrece información orientativa y puede contener errores; no sustituye el consejo de un profesional.</Paragraph>
 
-      <SectionTitle>4. Tus Derechos</SectionTitle>
+      <SectionTitle>4. Servicios de Terceros</SectionTitle>
+      <Paragraph>No vendemos tu información. La compartimos únicamente con proveedores que nos permiten operar la app, y solo lo necesario para su función:</Paragraph>
+      <Paragraph>• Supabase: base de datos, autenticación y almacenamiento de tus datos y fotos (encriptados en tránsito y en reposo).</Paragraph>
+      <Paragraph>• OpenAI: procesa el texto que envías al asistente de IA (ver sección 3).</Paragraph>
+      <Paragraph>• Sentry: recibe informes de errores para diagnosticar fallos; puede incluir tu identificador de cuenta.</Paragraph>
+      <Paragraph>• Proveedor de correo: envía los correos de tu cuenta (verificación, recuperación de contraseña).</Paragraph>
+
+      <SectionTitle>5. Almacenamiento y Seguridad</SectionTitle>
+      <Paragraph>Tus datos se almacenan de forma segura con encriptación en tránsito y en reposo. Las contraseñas se guardan con hash (bcrypt) y nunca en texto plano. El acceso a tus datos está restringido mediante políticas de seguridad por usuario.</Paragraph>
+
+      <SectionTitle>6. Tus Derechos</SectionTitle>
       <Paragraph>Tienes derecho a:</Paragraph>
-      <Paragraph>• Acceder a todos tus datos personales almacenados.</Paragraph>
-      <Paragraph>• Solicitar la corrección de datos inexactos.</Paragraph>
-      <Paragraph>• Solicitar la eliminación completa de tu cuenta y datos asociados.</Paragraph>
-      <Paragraph>• Exportar tus datos en formato legible.</Paragraph>
+      <Paragraph>• Acceder a tus datos personales y corregir los inexactos.</Paragraph>
+      <Paragraph>• Eliminar tu cuenta y todos los datos asociados. Puedes solicitarlo escribiéndonos al correo de contacto y tu cuenta será eliminada de forma permanente.</Paragraph>
+      <Paragraph>• Cambiar tu contraseña desde Perfil → Cuenta → Cambiar contraseña.</Paragraph>
 
-      <SectionTitle>5. Cookies y Seguimiento</SectionTitle>
-      <Paragraph>Aquaria no utiliza cookies de seguimiento ni tecnologías de rastreo publicitario. Solo utilizamos almacenamiento local del dispositivo para mantener tu sesión activa.</Paragraph>
+      <SectionTitle>7. Cookies y Seguimiento</SectionTitle>
+      <Paragraph>Aquaria no utiliza cookies de seguimiento ni rastreo publicitario, ni comparte tus datos con anunciantes. Solo usamos almacenamiento local del dispositivo para mantener tu sesión y analítica interna de uso.</Paragraph>
 
-      <SectionTitle>6. Menores de Edad</SectionTitle>
+      <SectionTitle>8. Menores de Edad</SectionTitle>
       <Paragraph>Aquaria no está dirigida a menores de 13 años. No recopilamos intencionalmente información de menores. Si eres padre o tutor y crees que tu hijo nos ha proporcionado datos, contáctanos para eliminarlos.</Paragraph>
 
-      <SectionTitle>7. Contacto</SectionTitle>
-      <Paragraph>Para consultas sobre privacidad, escríbenos a: soporte@aquaria.app</Paragraph>
+      <SectionTitle>9. Contacto</SectionTitle>
+      <Paragraph>Para consultas sobre privacidad o para eliminar tu cuenta, escríbenos a: soporte@severeynfish.cl</Paragraph>
     </View>
   );
 }
@@ -101,13 +114,13 @@ function PrivacyContent() {
 function TermsContent() {
   return (
     <View>
-      <Text style={styles.lastUpdated}>Última actualización: 10 de mayo de 2026</Text>
+      <Text style={styles.lastUpdated}>Última actualización: 10 de junio de 2026</Text>
 
       <SectionTitle>1. Aceptación de los Términos</SectionTitle>
       <Paragraph>Al descargar, instalar o utilizar Aquaria, aceptas estos términos de uso. Si no estás de acuerdo, no utilices la aplicación.</Paragraph>
 
       <SectionTitle>2. Descripción del Servicio</SectionTitle>
-      <Paragraph>Aquaria es una herramienta de gestión para acuaristas que permite registrar y monitorear acuarios, peces, parámetros del agua, tareas de mantenimiento y más. Las recomendaciones proporcionadas son orientativas y no sustituyen el consejo de un profesional.</Paragraph>
+      <Paragraph>Aquaria es una herramienta de gestión para acuaristas que permite registrar y monitorear acuarios, peces, parámetros del agua, tareas de mantenimiento y más. Incluye un asistente con inteligencia artificial que responde consultas sobre acuarismo. Las recomendaciones y las respuestas del asistente son orientativas, pueden contener errores y no sustituyen el consejo de un profesional.</Paragraph>
 
       <SectionTitle>3. Registro de Cuenta</SectionTitle>
       <Paragraph>Para usar Aquaria necesitas crear una cuenta con un correo electrónico válido. Eres responsable de mantener la confidencialidad de tu contraseña y de todas las actividades realizadas con tu cuenta.</Paragraph>
@@ -132,7 +145,7 @@ function TermsContent() {
       <Paragraph>Nos reservamos el derecho de modificar estos términos. Los cambios significativos se notificarán a través de la aplicación. El uso continuado después de la notificación constituye aceptación de los nuevos términos.</Paragraph>
 
       <SectionTitle>9. Contacto</SectionTitle>
-      <Paragraph>Para consultas sobre estos términos: soporte@aquaria.app</Paragraph>
+      <Paragraph>Para consultas sobre estos términos: soporte@severeynfish.cl</Paragraph>
     </View>
   );
 }
