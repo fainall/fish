@@ -19,6 +19,7 @@ interface AuthContextType {
   signIn:  (email: string, password: string) => Promise<{ error: string | null }>;
   signUp:  (email: string, password: string, fullName: string) => Promise<{ error: string | null; needsConfirmation?: boolean }>;
   signOut: () => Promise<void>;
+  deleteAccount: () => Promise<{ error: string | null }>;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -209,8 +210,26 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     await clear();
   };
 
+  // ── Delete account ──────────────────────────────────────────────────────────
+  // Borra la cuenta y TODOS los datos vía Edge Function (service_role).
+  const deleteAccount = async (): Promise<{ error: string | null }> => {
+    if (IS_DEMO_MODE) { await clear(); return { error: null }; }
+    try {
+      const { data, error } = await supabase.functions.invoke('delete-account');
+      if (error || !(data as any)?.success) {
+        return { error: (data as any)?.error ?? error?.message ?? 'No se pudo eliminar la cuenta.' };
+      }
+      // Limpiar sesión + caché local del dispositivo
+      try { await supabase.auth.signOut(); } catch {}
+      await clear();
+      return { error: null };
+    } catch (e: any) {
+      return { error: e?.message ?? 'No se pudo eliminar la cuenta.' };
+    }
+  };
+
   return (
-    <AuthContext.Provider value={{ user, loading, signIn, signUp, signOut }}>
+    <AuthContext.Provider value={{ user, loading, signIn, signUp, signOut, deleteAccount }}>
       {children}
     </AuthContext.Provider>
   );

@@ -65,7 +65,8 @@ function AvatarHero({
 
 export default function ProfileScreen({ onClose, navigation }: Props) {
   const { s, fs } = useResponsive();
-  const { user, signOut } = useAuth();
+  const { user, signOut, deleteAccount } = useAuth();
+  const [deleting, setDeleting] = useState(false);
   const { profile, updateProfile, resetOnboarding } = useUserProfile();
   const { clearAllAquariums } = useAquariums();
   const { unlocked, level, nextLevel } = useAchievements();
@@ -132,6 +133,43 @@ export default function ProfileScreen({ onClose, navigation }: Props) {
     Alert.alert('Cerrar sesión', '¿Seguro que quieres salir?', [
       { text: 'Cancelar', style: 'cancel' }, { text: 'Salir', style: 'destructive', onPress: signOut },
     ]);
+  };
+
+  const runDeleteAccount = async () => {
+    setDeleting(true);
+    const { error } = await deleteAccount();
+    setDeleting(false);
+    if (error) Alert.alert('Error', error);
+    // Si tuvo éxito, useAuth limpia la sesión → AppNavigator vuelve al login.
+  };
+
+  // Doble confirmación: la eliminación es permanente e irreversible.
+  const confirmDeleteAccount = () => {
+    if (Platform.OS === 'web') {
+      if ((window as any).confirm('Se eliminará tu cuenta y TODOS tus datos de forma permanente. ¿Continuar?') &&
+          (window as any).confirm('Esta acción NO se puede deshacer. ¿Eliminar definitivamente?')) {
+        runDeleteAccount();
+      }
+      return;
+    }
+    Alert.alert(
+      'Eliminar cuenta',
+      'Se eliminarán tu cuenta, acuarios, fotos, publicaciones y todos tus datos de forma PERMANENTE. Esta acción no se puede deshacer.',
+      [
+        { text: 'Cancelar', style: 'cancel' },
+        {
+          text: 'Eliminar', style: 'destructive',
+          onPress: () => Alert.alert(
+            '¿Estás seguro?',
+            'Esta es la última confirmación. Tu cuenta se borrará para siempre.',
+            [
+              { text: 'Cancelar', style: 'cancel' },
+              { text: 'Sí, eliminar', style: 'destructive', onPress: runDeleteAccount },
+            ],
+          ),
+        },
+      ],
+    );
   };
 
   // Sort achievements by unlock date desc
@@ -447,6 +485,18 @@ export default function ProfileScreen({ onClose, navigation }: Props) {
                 <Ionicons name="log-out-outline" size={18} color={COLORS.error} />
               </View>
               <Text style={[styles.actionText, { color: COLORS.error }]}>Cerrar sesión</Text>
+              <Ionicons name="chevron-forward" size={16} color={COLORS.textMuted} />
+            </TouchableOpacity>
+
+            <View style={styles.actionDivider} />
+
+            <TouchableOpacity style={styles.actionRow} onPress={confirmDeleteAccount} disabled={deleting}>
+              <View style={[styles.actionIcon, { backgroundColor: COLORS.error + '20' }]}>
+                {deleting
+                  ? <ActivityIndicator size="small" color={COLORS.error} />
+                  : <Ionicons name="trash-outline" size={18} color={COLORS.error} />}
+              </View>
+              <Text style={[styles.actionText, { color: COLORS.error }]}>Eliminar mi cuenta</Text>
               <Ionicons name="chevron-forward" size={16} color={COLORS.textMuted} />
             </TouchableOpacity>
           </View>

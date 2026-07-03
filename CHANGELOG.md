@@ -4,6 +4,15 @@ Todas las mejoras, features y bugfixes documentados por versión.
 
 ---
 
+## [1.0.0] — 2026-06-10 (OTA v28 · eliminar cuenta)
+
+### Eliminar cuenta dentro de la app (requisito de tiendas)
+- **Nueva opción "Eliminar mi cuenta"** (Perfil → Cuenta) con **doble confirmación**. Borra la cuenta y TODOS los datos del usuario.
+- Backend: nueva Edge Function `supabase/functions/delete-account` que verifica el JWT del llamante y usa el `service_role` (inyectado por Supabase) para `auth.admin.deleteUser`. El borrado de `auth.users` cascadea a todas las tablas ligadas (acuarios, peces, fotos, posts, tickets, etc.).
+- App: `deleteAccount()` en `useAuth` invoca la función y limpia sesión/caché local; al terminar, AppNavigator vuelve al login.
+- Permisos Android: removidos READ/WRITE_EXTERNAL_STORAGE y SCHEDULE_EXACT_ALARM (Play los cuestiona; no se necesitan).
+- ⚠️ **Pendiente de desplegar** la Edge Function (`supabase functions deploy delete-account`). Hasta entonces, "Eliminar mi cuenta" mostrará un error. (El mismo deploy pendiente aplica a `fish-ai`.)
+
 ## [1.0.0] — 2026-06-10 (OTA v26 · auditoría, tanda 1)
 
 ### Fixes de la auditoría (tanda 1 — código verificado)
