@@ -9,9 +9,6 @@
     "icon": "./assets/icon.png",
     "userInterfaceStyle": "dark",
     "newArchEnabled": true,
-    "splash": {
-      "backgroundColor": "#000516"
-    },
     "privacyUrl": "https://fainall.github.io/fish/aquamanager/privacy-policy.html",
     "ios": {
       "supportsTablet": true,
@@ -46,7 +43,14 @@
     },
     "plugins": [
       "expo-font",
-      "expo-splash-screen",
+      [
+        "expo-splash-screen",
+        {
+          "image": "./assets/splash-icon.png",
+          "backgroundColor": "#000516",
+          "imageWidth": 200
+        }
+      ],
       "expo-image-picker",
       [
         "expo-notifications",
