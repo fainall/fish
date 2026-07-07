@@ -4,6 +4,14 @@ Todas las mejoras, features y bugfixes documentados por versión.
 
 ---
 
+## [1.0.0] — 2026-07-07 · BUILD DE PRODUCCIÓN (AAB) listo para Google Play
+
+- **AAB de producción compilado y firmado** (EAS, keystore propio, versionCode 1). Incluye todo hasta v29.
+- Edge Functions desplegadas y verificadas: `fish-ai` (IA real de OpenAI, con candados anti prompt-injection — probado OK end-to-end) y `delete-account` (eliminar cuenta).
+- Secreto `OPENAI_API_KEY` configurado → IA operativa.
+- Build superó 3 errores diagnosticados desde logs: env vars faltantes, Sentry source-maps sin token (`SENTRY_DISABLE_AUTO_UPLOAD=true`), y splash sin imagen (plugin `expo-splash-screen` configurado con `splash-icon.png`).
+- Pendiente (administrativo del owner): cuenta Play Console, assets de tienda, Data Safety, prueba cerrada 12 testers/14 días, revocar token `sbp_` expuesto.
+
 ## [1.0.0] — 2026-07-06 (OTA v29 · deadlock al guardar contraseña)
 
 ### Fix — "Guardar nueva contraseña" se quedaba cargando para siempre
