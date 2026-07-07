@@ -88,13 +88,19 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     // Listener de cambio de sesión Supabase
     if (!IS_DEMO_MODE) {
       const { data: { subscription } } = supabase.auth.onAuthStateChange(
-        async (_event, session) => {
+        (_event, session) => {
           if (!mounted) return;
+          // IMPORTANTE: no hacer llamadas async a Supabase DENTRO del callback —
+          // corre con el "auth lock" tomado y provoca deadlock (p. ej. updateUser
+          // se cuelga para siempre). Diferimos con setTimeout(0) para liberar el lock.
           if (session?.user) {
-            const profile = await fetchProfile(session.user.id);
-            if (profile && mounted) { setUser(profile); persist(profile); }
+            setTimeout(async () => {
+              if (!mounted) return;
+              const profile = await fetchProfile(session.user.id);
+              if (profile && mounted) { setUser(profile); persist(profile); }
+            }, 0);
           } else if (_event === 'SIGNED_OUT' && mounted) {
-            clear();
+            setTimeout(() => { if (mounted) clear(); }, 0);
           }
         }
       );

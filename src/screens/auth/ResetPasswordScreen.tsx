@@ -36,9 +36,27 @@ export default function ResetPasswordScreen({ onDone }: Props) {
     }
     setLoading(true);
     try {
-      const { error } = await supabase.auth.updateUser({ password });
+      // Red de seguridad: si updateUser no resuelve en 15s (p. ej. un lock de
+      // auth atascado), no dejamos el spinner infinito.
+      const TIMEOUT = Symbol('timeout');
+      const result = await Promise.race([
+        supabase.auth.updateUser({ password }),
+        new Promise(resolve => setTimeout(() => resolve(TIMEOUT), 15000)),
+      ]);
+
+      if (result === TIMEOUT) {
+        Alert.alert(
+          'Tardó demasiado',
+          'La operación no respondió a tiempo. Es posible que tu contraseña ya se haya cambiado: intenta iniciar sesión con la nueva. Si no, solicita un código nuevo.',
+          [{ text: 'Entendido', onPress: onDone }],
+        );
+        setLoading(false);
+        return;
+      }
+
+      const { error } = result as { error: any };
       if (error) {
-        Alert.alert('Error', error.message || 'No se pudo actualizar la contraseña. El enlace pudo expirar; solicita uno nuevo.');
+        Alert.alert('Error', error.message || 'No se pudo actualizar la contraseña. El código pudo expirar; solicita uno nuevo.');
         setLoading(false);
         return;
       }

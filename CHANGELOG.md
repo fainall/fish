@@ -4,6 +4,13 @@ Todas las mejoras, features y bugfixes documentados por versión.
 
 ---
 
+## [1.0.0] — 2026-07-06 (OTA v29 · deadlock al guardar contraseña)
+
+### Fix — "Guardar nueva contraseña" se quedaba cargando para siempre
+- **Causa raíz:** el callback de `supabase.auth.onAuthStateChange` en `useAuth` era `async` y hacía `await fetchProfile()` (una llamada a Supabase) DENTRO del callback. Supabase advierte que esto puede causar **deadlock**: el callback corre con el "auth lock" tomado, así que `updateUser()` (guardar la contraseña) esperaba ese lock indefinidamente → spinner infinito.
+- **Fix:** callback ahora síncrono; el trabajo async (fetchProfile/clear) se difiere con `setTimeout(0)` para liberar el lock de inmediato. Aplica a todo el auth (login, recuperación).
+- **Red de seguridad:** `ResetPasswordScreen` envuelve `updateUser` en un `Promise.race` con timeout de 15s → si algo se atasca, muestra un aviso útil en vez de colgarse.
+
 ## [1.0.0] — 2026-06-10 (OTA v28 · eliminar cuenta)
 
 ### Eliminar cuenta dentro de la app (requisito de tiendas)
