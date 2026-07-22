@@ -16,6 +16,7 @@ import { useFishSuggestions } from '../../hooks/useFishSuggestions';
 import { useAdminConversations, AdminConversation } from '../../hooks/useAdminConversations';
 import { useTickets, TicketStatus } from '../../hooks/useTickets';
 import { useAdminAnalytics } from '../../hooks/useAdminAnalytics';
+import { useAiKnowledge } from '../../hooks/useAiKnowledge';
 import { WaterType, AggressionLevel, FishSuggestion, SuggestionStatus } from '../../types';
 import { confirmAction } from '../../utils/confirm';
 import { supabase, IS_DEMO_MODE } from '../../services/supabase';
@@ -67,8 +68,34 @@ export default function AdminDashboardScreen() {
   const { tickets, updateStatus: updateTicketStatus } = useTickets();
   const openTickets = tickets.filter(t => t.status === 'open').length;
   const analytics = useAdminAnalytics();
+  const { items: aiItems, loading: aiLoading, addItem: aiAdd, updateItem: aiUpdate, toggleActive: aiToggle, removeItem: aiRemove } = useAiKnowledge();
 
-  type Tab = 'dashboard' | 'metrics' | 'chat' | 'fish' | 'suggestions' | 'tickets';
+  // Editor de conocimiento de la IA
+  const [showAiEditor, setShowAiEditor] = useState(false);
+  const [aiDraftId,    setAiDraftId]    = useState<string | null>(null);
+  const [aiTopic,      setAiTopic]      = useState('');
+  const [aiContent,    setAiContent]    = useState('');
+  const [aiSaving,     setAiSaving]     = useState(false);
+
+  function openAiNew() { setAiDraftId(null); setAiTopic(''); setAiContent(''); setShowAiEditor(true); }
+  function openAiEdit(it: { id: string; topic: string; content: string }) {
+    setAiDraftId(it.id); setAiTopic(it.topic ?? ''); setAiContent(it.content ?? ''); setShowAiEditor(true);
+  }
+  async function saveAiDraft() {
+    if (!aiContent.trim()) { Alert.alert('Falta contenido', 'Escribe la corrección o el hecho que debe saber la IA.'); return; }
+    setAiSaving(true);
+    const ok = aiDraftId
+      ? await aiUpdate(aiDraftId, aiTopic, aiContent)
+      : await aiAdd(aiTopic, aiContent);
+    setAiSaving(false);
+    if (ok) { setShowAiEditor(false); }
+    else Alert.alert('Error', 'No se pudo guardar. Verifica tu conexión y que seas admin.');
+  }
+  function confirmAiDelete(id: string) {
+    confirmAction('Eliminar', '¿Eliminar esta corrección de la IA?', () => aiRemove(id));
+  }
+
+  type Tab = 'dashboard' | 'metrics' | 'chat' | 'fish' | 'suggestions' | 'tickets' | 'ai';
   const [activeTab,      setActiveTab]      = useState<Tab>('dashboard');
   const [selectedConvId, setSelectedConvId] = useState<string | null>(null);
   const selectedConv = conversations.find(c => c.id === selectedConvId) ?? null;
@@ -307,6 +334,7 @@ export default function AdminDashboardScreen() {
           { key: 'fish',        label: 'Peces',        icon: 'fish',        iconO: 'fish-outline' },
           { key: 'suggestions', label: 'Sugerencias',  icon: 'bulb',        iconO: 'bulb-outline' },
           { key: 'tickets',     label: 'Tickets',      icon: 'bug',         iconO: 'bug-outline' },
+          { key: 'ai',          label: 'IA',           icon: 'sparkles',    iconO: 'sparkles-outline' },
         ] as const).map(t => {
           const on = activeTab === t.key;
           return (
@@ -730,8 +758,113 @@ export default function AdminDashboardScreen() {
       )}
 
       {/* ══════════════════════════════════════════════════════════════════
+          IA — "Entrenamiento": base de conocimiento editable del asistente
+      ══════════════════════════════════════════════════════════════════ */}
+      {activeTab === 'ai' && (
+        <View style={{ height: Math.max(winH - 180, 300), width: '100%' }}>
+          <ScrollView style={{ flex: 1 }} showsVerticalScrollIndicator={false}
+            contentContainerStyle={{ paddingHorizontal: SPACING.screen, paddingTop: SPACING.md, paddingBottom: SPACING.xxl }}>
+
+            <Text style={S.sectionTitle}>Entrenar al asistente 🤖</Text>
+
+            {/* Explicación */}
+            <View style={S.aiInfoBox}>
+              <Ionicons name="information-circle-outline" size={18} color={COLORS.primary} />
+              <Text style={S.aiInfoText}>
+                Escribe correcciones o datos verificados. El asistente los usará con{' '}
+                <Text style={{ fontFamily: FONTS.sansBd }}>prioridad</Text> al responder a los usuarios.
+                Ej: “La temperatura ideal del Betta es 24–28 °C, no 22”. Los cambios aplican al instante.
+              </Text>
+            </View>
+
+            <TouchableOpacity style={S.addBtnFull} onPress={openAiNew}>
+              <Ionicons name="add-circle" size={18} color="#fff" />
+              <Text style={S.addBtnText}>Nueva corrección</Text>
+            </TouchableOpacity>
+
+            <Text style={S.listMeta}>
+              {aiItems.length} corrección{aiItems.length === 1 ? '' : 'es'} · {aiItems.filter(i => i.active).length} activa{aiItems.filter(i => i.active).length === 1 ? '' : 's'}
+            </Text>
+
+            {aiLoading ? (
+              <Text style={S.emptyText}>Cargando…</Text>
+            ) : aiItems.length === 0 ? (
+              <View style={S.empty}>
+                <Ionicons name="sparkles-outline" size={36} color={COLORS.textMuted} />
+                <Text style={S.emptyText}>Aún no has añadido conocimiento.</Text>
+                <Text style={[S.emptyText, { fontSize: 12 }]}>Agrega la primera corrección para mejorar las respuestas.</Text>
+              </View>
+            ) : aiItems.map(it => (
+              <View key={it.id} style={[S.aiCard, !it.active && { opacity: 0.55 }]}>
+                <View style={{ flex: 1 }}>
+                  {it.topic ? <Text style={S.aiTopic}>{it.topic}</Text> : null}
+                  <Text style={S.aiContent} numberOfLines={4}>{it.content}</Text>
+                  <View style={S.aiCardMeta}>
+                    <View style={[S.pill, { backgroundColor: (it.active ? COLORS.success : COLORS.textMuted) + '1f' }]}>
+                      <Text style={[S.pillText, { color: it.active ? COLORS.success : COLORS.textMuted }]}>
+                        {it.active ? 'Activa' : 'Inactiva'}
+                      </Text>
+                    </View>
+                  </View>
+                </View>
+                <View style={{ gap: 6, alignItems: 'center' }}>
+                  <TouchableOpacity style={[S.toggle, it.active && S.toggleOn]} onPress={() => aiToggle(it.id, !it.active)}>
+                    <View style={[S.toggleThumb, it.active && S.toggleThumbOn]} />
+                  </TouchableOpacity>
+                  <TouchableOpacity style={S.iconBtnBlue} onPress={() => openAiEdit(it)}>
+                    <Ionicons name="pencil" size={14} color={COLORS.primary} />
+                  </TouchableOpacity>
+                  <TouchableOpacity style={S.iconBtnRed} onPress={() => confirmAiDelete(it.id)}>
+                    <Ionicons name="trash-outline" size={14} color={COLORS.error} />
+                  </TouchableOpacity>
+                </View>
+              </View>
+            ))}
+          </ScrollView>
+        </View>
+      )}
+
+      {/* ══════════════════════════════════════════════════════════════════
           MODALS
       ══════════════════════════════════════════════════════════════════ */}
+
+      {/* IA knowledge editor */}
+      <Modal visible={showAiEditor} animationType="slide" transparent>
+        <KeyboardAvoidingView style={{ flex: 1 }} behavior={Platform.OS === 'ios' ? 'padding' : undefined}>
+          <View style={S.overlay}>
+            <View style={S.sheet}>
+              <View style={S.handle} />
+              <View style={S.sheetHeader}>
+                <Text style={S.sheetTitle}>{aiDraftId ? '✏️ Editar corrección' : '➕ Nueva corrección'}</Text>
+                <TouchableOpacity style={S.closeBtn} onPress={() => setShowAiEditor(false)}>
+                  <Ionicons name="close" size={18} color={COLORS.textMuted} />
+                </TouchableOpacity>
+              </View>
+              <ScrollView showsVerticalScrollIndicator={false} keyboardShouldPersistTaps="handled"
+                contentContainerStyle={{ paddingHorizontal: SPACING.md, paddingBottom: SPACING.xxl }}>
+                <View style={S.fieldRow}>
+                  <Text style={S.fieldLabel}>Tema (opcional)</Text>
+                  <TextInput style={S.fieldInput} value={aiTopic} onChangeText={setAiTopic}
+                    placeholder="Ej: Temperatura del Betta" placeholderTextColor={COLORS.textMuted} maxLength={120} />
+                </View>
+                <View style={S.fieldRow}>
+                  <Text style={S.fieldLabel}>Corrección / hecho verificado *</Text>
+                  <TextInput style={[S.fieldInput, { minHeight: 120, textAlignVertical: 'top' }]}
+                    value={aiContent} onChangeText={setAiContent}
+                    placeholder="Escribe con claridad lo que la IA debe saber o corregir…"
+                    placeholderTextColor={COLORS.textMuted} multiline maxLength={1200} />
+                </View>
+                <TouchableOpacity style={[S.saveBtn, aiSaving && { opacity: 0.6 }]} onPress={saveAiDraft} disabled={aiSaving}>
+                  {aiSaving ? <ActivityIndicator color="#fff" /> : (
+                    <><Ionicons name="checkmark-circle" size={19} color="#fff" />
+                      <Text style={S.saveBtnText}>{aiDraftId ? 'Guardar cambios' : 'Añadir'}</Text></>
+                  )}
+                </TouchableOpacity>
+              </ScrollView>
+            </View>
+          </View>
+        </KeyboardAvoidingView>
+      </Modal>
 
       {/* Suggestion detail */}
       <Modal visible={showSuggDetail} animationType="slide" transparent>
@@ -1339,7 +1472,30 @@ const S = StyleSheet.create({
     paddingHorizontal: SPACING.md, height: 42,
   },
   addBtnText: { color: '#fff', fontWeight: '700', fontSize: 13, fontFamily: FONTS.sansBd },
+  addBtnFull: {
+    flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 6,
+    backgroundColor: COLORS.primary, borderRadius: BORDER_RADIUS.xl,
+    height: 46, marginBottom: SPACING.sm,
+  },
   listMeta: { color: COLORS.textMuted, fontSize: 11, marginBottom: 4, fontFamily: FONTS.sans },
+
+  // IA — base de conocimiento
+  aiInfoBox: {
+    flexDirection: 'row', gap: 8, alignItems: 'flex-start',
+    backgroundColor: COLORS.primary + '10', borderRadius: BORDER_RADIUS.lg,
+    padding: SPACING.md, marginBottom: SPACING.md,
+    borderWidth: 1, borderColor: COLORS.primary + '22',
+  },
+  aiInfoText: { flex: 1, fontSize: 12.5, color: COLORS.textSecondary, lineHeight: 18, fontFamily: FONTS.sans },
+  aiCard: {
+    flexDirection: 'row', gap: SPACING.sm,
+    backgroundColor: COLORS.backgroundCard, borderRadius: BORDER_RADIUS.xl,
+    padding: SPACING.md, marginBottom: SPACING.sm,
+    borderWidth: 1, borderColor: COLORS.border,
+  },
+  aiTopic: { fontSize: 13, fontWeight: '700', color: COLORS.text, marginBottom: 3, fontFamily: FONTS.sansBd },
+  aiContent: { fontSize: 13, color: COLORS.textSecondary, lineHeight: 18, fontFamily: FONTS.sans },
+  aiCardMeta: { flexDirection: 'row', gap: 6, marginTop: 8 },
   listContent: { paddingHorizontal: SPACING.screen, paddingBottom: SPACING.xxl },
   fishCard: {
     flexDirection: 'row', alignItems: 'center',

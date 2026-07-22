@@ -1,0 +1,79 @@
+<svg width="1024" height="500" viewBox="0 0 1024 500" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <linearGradient id="bg" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#000516"/>
+      <stop offset="0.55" stop-color="#03182B"/>
+      <stop offset="1" stop-color="#06263F"/>
+    </linearGradient>
+    <radialGradient id="glow" cx="0.72" cy="0.42" r="0.55">
+      <stop offset="0" stop-color="#0FA6D6" stop-opacity="0.55"/>
+      <stop offset="0.5" stop-color="#0090BF" stop-opacity="0.18"/>
+      <stop offset="1" stop-color="#0090BF" stop-opacity="0"/>
+    </radialGradient>
+    <linearGradient id="cyan" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#7FE3F5"/>
+      <stop offset="0.5" stop-color="#33B8D4"/>
+      <stop offset="1" stop-color="#0076A8"/>
+    </linearGradient>
+    <linearGradient id="cyan2" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#33B8D4"/>
+      <stop offset="1" stop-color="#0A5FA0"/>
+    </linearGradient>
+    <linearGradient id="wave" x1="0" y1="0" x2="1" y2="0">
+      <stop offset="0" stop-color="#0090BF" stop-opacity="0"/>
+      <stop offset="0.5" stop-color="#33B8D4" stop-opacity="0.9"/>
+      <stop offset="1" stop-color="#7FE3F5" stop-opacity="0"/>
+    </linearGradient>
+  </defs>
+
+  <!-- Background -->
+  <rect width="1024" height="500" fill="url(#bg)"/>
+  <rect width="1024" height="500" fill="url(#glow)"/>
+
+  <!-- Faint flowing waves -->
+  <path d="M0,430 C220,380 380,470 560,430 C740,390 900,450 1024,410 L1024,500 L0,500 Z" fill="#0090BF" opacity="0.10"/>
+  <path d="M0,455 C240,415 420,490 620,450 C820,410 950,470 1024,445 L1024,500 L0,500 Z" fill="#33B8D4" opacity="0.08"/>
+
+  <!-- Rising bubbles -->
+  <g fill="none" stroke="#7FE3F5">
+    <circle cx="120" cy="120" r="6"  stroke-opacity="0.35"/>
+    <circle cx="150" cy="200" r="4"  stroke-opacity="0.25"/>
+    <circle cx="90"  cy="300" r="3"  stroke-opacity="0.20"/>
+    <circle cx="640" cy="90"  r="5"  stroke-opacity="0.30"/>
+    <circle cx="690" cy="150" r="8"  stroke-opacity="0.35"/>
+    <circle cx="960" cy="330" r="5"  stroke-opacity="0.25"/>
+    <circle cx="915" cy="120" r="4"  stroke-opacity="0.22"/>
+  </g>
+
+  <!-- ===== Right-side emblem: A-mark + wave + fish ===== -->
+  <g transform="translate(720,110)">
+    <!-- glowing A made of two strokes -->
+    <path d="M95,15 L18,205 L58,205 L110,70 L150,175 L118,175 L104,140 L128,205 L172,205 Z"
+          fill="url(#cyan)"/>
+    <!-- wave swoosh crossing the A -->
+    <path d="M2,150 C55,120 95,175 150,150 C195,130 220,150 232,140"
+          fill="none" stroke="url(#cyan2)" stroke-width="17" stroke-linecap="round" opacity="0.95"/>
+    <!-- fish -->
+    <g transform="translate(120,150)">
+      <path d="M0,20 C30,-8 92,-8 120,20 C92,48 30,48 0,20 Z" fill="url(#cyan2)"/>
+      <path d="M120,20 L150,2 L150,38 Z" fill="url(#cyan2)"/>
+      <circle cx="30" cy="14" r="5" fill="#02141F"/>
+    </g>
+    <!-- bubbles near mark -->
+    <circle cx="150" cy="35" r="9"  fill="#7FE3F5" opacity="0.9"/>
+    <circle cx="182" cy="70" r="6"  fill="#33B8D4" opacity="0.85"/>
+    <circle cx="70"  cy="95" r="11" fill="#33B8D4" opacity="0.5"/>
+  </g>
+
+  <!-- ===== Left-side text ===== -->
+  <g transform="translate(70,190)">
+    <text x="0" y="0" font-family="Segoe UI, Arial, sans-serif" font-size="86" font-weight="700"
+          letter-spacing="14" fill="#FFFFFF">AQUARIA</text>
+    <!-- divider -->
+    <rect x="4" y="34" width="150" height="4" rx="2" fill="url(#wave)"/>
+    <text x="4" y="82" font-family="Segoe UI, Arial, sans-serif" font-size="27" font-weight="600"
+          letter-spacing="1" fill="#9FD8EC">Gestiona tus acuarios · Cuida tus peces</text>
+    <text x="4" y="120" font-family="Segoe UI, Arial, sans-serif" font-size="20" font-weight="400"
+          letter-spacing="0.5" fill="#6FA9C6">Parámetros del agua · Catálogo · Comunidad · IA</text>
+  </g>
+</svg>

@@ -15,6 +15,8 @@
 // ─────────────────────────────────────────────────────────────────────────────
 
 const OPENAI_API_KEY = Deno.env.get('OPENAI_API_KEY') ?? '';
+const SUPABASE_URL   = Deno.env.get('SUPABASE_URL') ?? '';
+const SERVICE_KEY    = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? '';
 const MODEL = 'gpt-4o-mini';
 
 const SYSTEM_PROMPT = `Eres "Asistente Aquaria", un experto en acuariofilia que ayuda dentro de la app Aquaria.
@@ -50,6 +52,30 @@ function json(body: unknown, status = 200) {
   });
 }
 
+// ── Base de conocimiento editable (tabla ai_knowledge) ───────────────────────
+// El admin corrige/agrega hechos desde el panel; aquí los leemos (service_role,
+// ignora RLS) e inyectamos en el system prompt con prioridad. Si falla la
+// lectura, la IA sigue funcionando con su prompt base (fail-open, no bloquea).
+async function fetchKnowledge(): Promise<string> {
+  if (!SUPABASE_URL || !SERVICE_KEY) return '';
+  try {
+    const res = await fetch(
+      `${SUPABASE_URL}/rest/v1/ai_knowledge?active=eq.true&select=topic,content&order=updated_at.desc`,
+      { headers: { apikey: SERVICE_KEY, Authorization: `Bearer ${SERVICE_KEY}` } },
+    );
+    if (!res.ok) return '';
+    const rows = await res.json();
+    if (!Array.isArray(rows) || rows.length === 0) return '';
+    return rows
+      .slice(0, 60)
+      .map((r: any) => `• ${r.topic ? String(r.topic).trim() + ': ' : ''}${String(r.content).trim()}`)
+      .join('\n');
+  } catch (e) {
+    console.warn('[fish-ai] knowledge fetch failed:', e);
+    return '';
+  }
+}
+
 Deno.serve(async (req) => {
   if (req.method === 'OPTIONS') return new Response('ok', { headers: cors });
   if (req.method !== 'POST') return json({ error: 'Method not allowed' }, 405);
@@ -77,8 +103,14 @@ Deno.serve(async (req) => {
         .map(m => ({ role: m.role, content: m.content.slice(0, 1000) }))
     : [];
 
+  // Inyecta el conocimiento verificado por el admin (si hay) con prioridad.
+  const knowledge = await fetchKnowledge();
+  const systemPrompt = knowledge
+    ? `${SYSTEM_PROMPT}\n\nCONOCIMIENTO VERIFICADO POR EXPERTOS DE AQUARIA (tiene PRIORIDAD sobre tu conocimiento general; si algo contradice esto, corrige y usa lo de aquí):\n${knowledge}`
+    : SYSTEM_PROMPT;
+
   const messages = [
-    { role: 'system', content: SYSTEM_PROMPT },
+    { role: 'system', content: systemPrompt },
     ...history,
     { role: 'user', content: question },
   ];

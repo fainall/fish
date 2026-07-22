@@ -1,0 +1,40 @@
+<svg width="512" height="512" viewBox="0 0 512 512" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <linearGradient id="bg" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#02101E"/>
+      <stop offset="1" stop-color="#06283F"/>
+    </linearGradient>
+    <radialGradient id="glow" cx="0.5" cy="0.42" r="0.6">
+      <stop offset="0" stop-color="#0FA6D6" stop-opacity="0.45"/>
+      <stop offset="1" stop-color="#0090BF" stop-opacity="0"/>
+    </radialGradient>
+    <linearGradient id="cyan" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#7FE3F5"/>
+      <stop offset="0.5" stop-color="#33B8D4"/>
+      <stop offset="1" stop-color="#0076A8"/>
+    </linearGradient>
+    <linearGradient id="cyan2" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#33B8D4"/>
+      <stop offset="1" stop-color="#0A5FA0"/>
+    </linearGradient>
+  </defs>
+
+  <rect width="512" height="512" fill="url(#bg)"/>
+  <rect width="512" height="512" fill="url(#glow)"/>
+
+  <!-- emblem: A + wave + fish + bubbles (same motif as icon) -->
+  <g transform="translate(67,103) scale(1.39)">
+    <path d="M95,15 L18,205 L58,205 L110,70 L150,175 L118,175 L104,140 L128,205 L172,205 Z"
+          fill="url(#cyan)"/>
+    <path d="M2,150 C55,120 95,175 150,150 C195,130 220,150 232,140"
+          fill="none" stroke="url(#cyan2)" stroke-width="17" stroke-linecap="round" opacity="0.95"/>
+    <g transform="translate(120,150)">
+      <path d="M0,20 C30,-8 92,-8 120,20 C92,48 30,48 0,20 Z" fill="url(#cyan2)"/>
+      <path d="M120,20 L150,2 L150,38 Z" fill="url(#cyan2)"/>
+      <circle cx="30" cy="14" r="5" fill="#02141F"/>
+    </g>
+    <circle cx="150" cy="35" r="9"  fill="#7FE3F5" opacity="0.9"/>
+    <circle cx="182" cy="70" r="6"  fill="#33B8D4" opacity="0.85"/>
+    <circle cx="70"  cy="95" r="11" fill="#33B8D4" opacity="0.5"/>
+  </g>
+</svg>
