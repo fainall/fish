@@ -22,6 +22,8 @@ import { COLORS, FONTS, SPACING, BORDER_RADIUS } from '../../constants/theme';
 import { Post } from '../../types';
 import { supabase, IS_DEMO_MODE } from '../../services/supabase';
 import { useFishDatabase } from '../../hooks/useFishDatabase';
+import { useAuth } from '../../hooks/useAuth';
+import ReportBlockMenu from './ReportBlockMenu';
 
 interface Props {
   visible: boolean;
@@ -98,6 +100,9 @@ function Avatar({ name, size = 80 }: { name: string; size?: number }) {
 }
 
 export default function UserProfileModal({ visible, userId, userName, posts, onClose }: Props) {
+  const { user: currentUser } = useAuth();
+  const [showMenu, setShowMenu] = useState(false);
+  const isSelf = currentUser?.id === userId;
   const { fish: fishDb } = useFishDatabase();
   const [tab, setTab] = useState<Tab>('aquariums');
 
@@ -197,10 +202,29 @@ export default function UserProfileModal({ visible, userId, userName, posts, onC
           {/* Top bar */}
           <View style={S.topBar}>
             <Text style={S.topTitle}>Perfil de usuario</Text>
-            <TouchableOpacity style={S.closeBtn} onPress={onClose}>
-              <Ionicons name="close" size={20} color={COLORS.textMuted} />
-            </TouchableOpacity>
+            <View style={{ flexDirection: 'row', gap: 6 }}>
+              {!isSelf && userId ? (
+                <TouchableOpacity style={S.closeBtn} onPress={() => setShowMenu(true)}>
+                  <Ionicons name="ellipsis-vertical" size={18} color={COLORS.textMuted} />
+                </TouchableOpacity>
+              ) : null}
+              <TouchableOpacity style={S.closeBtn} onPress={onClose}>
+                <Ionicons name="close" size={20} color={COLORS.textMuted} />
+              </TouchableOpacity>
+            </View>
           </View>
+
+          {showMenu && !isSelf && userId ? (
+            <ReportBlockMenu
+              visible={showMenu}
+              onClose={() => setShowMenu(false)}
+              target="user"
+              targetId={userId}
+              targetUserId={userId}
+              targetUserName={userName}
+              onBlocked={() => { setShowMenu(false); onClose(); }}
+            />
+          ) : null}
 
           <ScrollView showsVerticalScrollIndicator={false}>
             {/* Hero */}

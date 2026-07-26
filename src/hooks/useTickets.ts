@@ -13,17 +13,21 @@ import { supabase, IS_DEMO_MODE } from '../services/supabase';
 import { useAuth } from './useAuth';
 
 export type TicketStatus = 'open' | 'in_progress' | 'resolved';
-export type TicketCategory = 'bug' | 'suggestion' | 'other';
+export type TicketCategory = 'bug' | 'suggestion' | 'other' | 'report';
+export type ReportTarget   = 'post' | 'comment' | 'user';
 
 export interface SupportTicket {
-  id:          string;
-  user_id:     string;
-  user_name:   string;
-  category:    TicketCategory;
-  description: string;
-  image_url?:  string | null;
-  status:      TicketStatus;
-  created_at:  string;
+  id:              string;
+  user_id:         string;
+  user_name:       string;
+  category:        TicketCategory;
+  description:     string;
+  image_url?:      string | null;
+  status:          TicketStatus;
+  created_at:      string;
+  target_type?:    ReportTarget | null;
+  target_id?:      string | null;
+  target_user_id?: string | null;
 }
 
 export function useTickets() {
@@ -87,6 +91,33 @@ export function useTickets() {
     } catch (e) { console.warn('[Tickets] create failed:', e); return false; }
   }, [user]);
 
+  // Reportar contenido (post/comentario/usuario). Reusa support_tickets con
+  // categoria 'report' + target_type/target_id. El admin lo ve en la pestana
+  // Tickets junto con los bugs/sugerencias.
+  const reportContent = useCallback(async (
+    target: ReportTarget,
+    targetId: string,
+    targetUserId: string | null,
+    reason: string,
+  ): Promise<boolean> => {
+    if (!user || !reason.trim()) return false;
+    if (IS_DEMO_MODE) return true;
+    try {
+      const { data, error } = await supabase.from('support_tickets').insert({
+        user_id:        user.id,
+        user_name:      user.full_name ?? 'Usuario',
+        category:       'report',
+        description:    reason.trim(),
+        target_type:    target,
+        target_id:      targetId,
+        target_user_id: targetUserId,
+      }).select().single();
+      if (error || !data) { console.warn('[Tickets] report failed:', error?.message); return false; }
+      setTickets(prev => [data as SupportTicket, ...prev]);
+      return true;
+    } catch (e) { console.warn('[Tickets] report failed:', e); return false; }
+  }, [user]);
+
   // Admin: cambiar estado (RLS exige rol admin)
   const updateStatus = useCallback(async (id: string, status: TicketStatus) => {
     setTickets(prev => prev.map(t => t.id === id ? { ...t, status } : t));
@@ -96,5 +127,5 @@ export function useTickets() {
     }
   }, []);
 
-  return { tickets, loading, createTicket, updateStatus, reload };
+  return { tickets, loading, createTicket, reportContent, updateStatus, reload };
 }

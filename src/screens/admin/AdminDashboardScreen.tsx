@@ -722,16 +722,35 @@ export default function AdminDashboardScreen() {
                 <Text style={S.emptyText}>Sin reportes aún</Text>
               </View>
             ) : tickets.map(t => {
-              const catIcon = t.category === 'bug' ? 'bug' : t.category === 'suggestion' ? 'bulb' : 'ellipsis-horizontal';
+              const isReport = t.category === 'report';
+              const catIcon = isReport ? 'flag' :
+                              t.category === 'bug' ? 'bug' :
+                              t.category === 'suggestion' ? 'bulb' :
+                              'ellipsis-horizontal';
+              const catColor = isReport ? COLORS.error : COLORS.primary;
+              const targetLabel = t.target_type === 'post'    ? 'publicación'
+                                : t.target_type === 'comment' ? 'comentario'
+                                : t.target_type === 'user'    ? 'usuario'
+                                : null;
               return (
                 <View key={t.id} style={S.ticketCard}>
                   <View style={S.ticketHead}>
-                    <Ionicons name={catIcon as any} size={15} color={COLORS.primary} />
-                    <Text style={S.ticketUser} numberOfLines={1}>{t.user_name}</Text>
+                    <Ionicons name={catIcon as any} size={15} color={catColor} />
+                    <Text style={S.ticketUser} numberOfLines={1}>
+                      {isReport ? `Reporte de ${t.user_name}` : t.user_name}
+                    </Text>
                     <Text style={S.ticketWhen}>
                       {new Date(t.created_at).toLocaleDateString('es-ES', { day: 'numeric', month: 'short' })}
                     </Text>
                   </View>
+                  {isReport && targetLabel ? (
+                    <Text style={{
+                      fontSize: 11, color: COLORS.error, fontFamily: FONTS.sansSb,
+                      marginBottom: 4, textTransform: 'uppercase', letterSpacing: 0.4,
+                    }}>
+                      Reporta {targetLabel}{t.target_id ? ` #${String(t.target_id).slice(0,8)}` : ''}
+                    </Text>
+                  ) : null}
                   <Text style={S.ticketBody}>{t.description}</Text>
                   {t.image_url ? (
                     <Image source={{ uri: t.image_url }} style={S.ticketShot} resizeMode="cover" />

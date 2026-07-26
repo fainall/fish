@@ -5,6 +5,7 @@ import { supabase, IS_DEMO_MODE } from '../services/supabase';
 import { Post, PostComment } from '../types';
 import { DEMO_POSTS, DEMO_COMMENTS } from '../data/communityData';
 import { useAuth } from './useAuth';
+import { useBlocks } from './useBlocks';
 
 const PAGE_SIZE = 15;
 
@@ -69,9 +70,18 @@ async function saveLocalComments(comments: Record<string, PostComment[]>) {
 export function useCommunity() {
   const { user } = useAuth();
   const uid = user?.id ?? '';
+  const { isBlocked } = useBlocks();
 
-  const [posts,       setPosts]       = useState<Post[]>(IS_DEMO_MODE ? DEMO_POSTS : []);
-  const [comments,    setComments]    = useState<Record<string, PostComment[]>>(IS_DEMO_MODE ? DEMO_COMMENTS : {});
+  const [postsRaw,    setPosts]       = useState<Post[]>(IS_DEMO_MODE ? DEMO_POSTS : []);
+  const [commentsRaw, setComments]    = useState<Record<string, PostComment[]>>(IS_DEMO_MODE ? DEMO_COMMENTS : {});
+
+  // Filtrar autores bloqueados (requisito de Play Store para UGC).
+  const posts    = postsRaw.filter(p => !isBlocked(p.user_id));
+  const comments = Object.fromEntries(
+    Object.entries(commentsRaw).map(([pid, cs]) =>
+      [pid, cs.filter(c => !isBlocked(c.user_id))]
+    ),
+  );
   const [loading,     setLoading]     = useState(true);
   const [loadingMore, setLoadingMore] = useState(false);
   const [hasMore,     setHasMore]     = useState(!IS_DEMO_MODE);
@@ -82,13 +92,13 @@ export function useCommunity() {
   // In real mode, Supabase is the source of truth — no local persistence needed
   useEffect(() => {
     if (!initialized.current || !IS_DEMO_MODE) return;
-    saveLocalPosts(posts);
-  }, [posts]);
+    saveLocalPosts(postsRaw);
+  }, [postsRaw]);
 
   useEffect(() => {
     if (!initialized.current || !IS_DEMO_MODE) return;
-    saveLocalComments(comments);
-  }, [comments]);
+    saveLocalComments(commentsRaw);
+  }, [commentsRaw]);
 
   // ── Load first page ────────────────────────────────────────────────────────
   const reload = useCallback(async () => {
@@ -152,21 +162,21 @@ export function useCommunity() {
     if (IS_DEMO_MODE || !hasMore || loadingMore || loading) return;
     setLoadingMore(true);
     try {
-      const offset = posts.length;
+      const offset = postsRaw.length;
       const { data, error } = await supabase
         .from('posts_with_counts')
         .select('*')
         .order('created_at', { ascending: false })
         .range(offset, offset + PAGE_SIZE - 1);
       if (!error && data) {
-        const existingIds = new Set(posts.map(p => p.id));
+        const existingIds = new Set(postsRaw.map(p => p.id));
         const newPosts = data.map(rowToPost).filter(p => !existingIds.has(p.id));
         setPosts(prev => [...prev, ...newPosts]);
         setHasMore(data.length === PAGE_SIZE);
       }
     } catch (e) { console.warn('[Community] loadMore failed:', e); }
     setLoadingMore(false);
-  }, [hasMore, loadingMore, loading, posts]);
+  }, [hasMore, loadingMore, loading, postsRaw]);
 
   // ── Upload image to Supabase Storage ──────────────────────────────────────
   const uploadPostImage = useCallback(async (localUri: string): Promise<string | null> => {

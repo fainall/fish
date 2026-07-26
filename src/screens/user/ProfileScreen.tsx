@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import {
-  View, Text, ScrollView, TouchableOpacity, StyleSheet,
+  View, Text, ScrollView, TouchableOpacity, StyleSheet, Modal,
   TextInput, Alert, Image, ActivityIndicator, Platform, useWindowDimensions,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
@@ -15,6 +15,7 @@ import { useUserProfile } from '../../hooks/useUserProfile';
 import { useAuth } from '../../hooks/useAuth';
 import { useAquariums } from '../../hooks/useAquariums';
 import { useAchievements, ACHIEVEMENTS, AQUARIST_LEVELS } from '../../hooks/useAchievements';
+import { useBlocks } from '../../hooks/useBlocks';
 import { ExperienceLevel } from '../../constants/tips';
 import { useScalePress } from '../../utils/animations';
 
@@ -66,6 +67,38 @@ function AvatarHero({
 export default function ProfileScreen({ onClose, navigation }: Props) {
   const { s, fs } = useResponsive();
   const { user, signOut, deleteAccount } = useAuth();
+  const { blocked, unblock } = useBlocks();
+  const [showBlocked, setShowBlocked] = useState(false);
+  const [blockedProfiles, setBlockedProfiles] = useState<{ id: string; name: string }[]>([]);
+
+  async function openBlockedList() {
+    setShowBlocked(true);
+    // Load names for currently blocked user ids
+    const ids = [...blocked];
+    if (ids.length === 0) { setBlockedProfiles([]); return; }
+    try {
+      const { supabase } = require('../../services/supabase');
+      const { data } = await supabase.from('users').select('id, full_name').in('id', ids);
+      const rows: { id: string; name: string }[] = (data ?? []).map((r: any) =>
+        ({ id: r.id, name: r.full_name ?? 'Usuario' }));
+      // Include ids that didn't return a row so el usuario pueda desbloquearlos igual
+      const known = new Set(rows.map(r => r.id));
+      ids.forEach(id => { if (!known.has(id)) rows.push({ id, name: 'Usuario' }); });
+      setBlockedProfiles(rows);
+    } catch (e) {
+      setBlockedProfiles(ids.map(id => ({ id, name: 'Usuario' })));
+    }
+  }
+
+  async function handleUnblock(id: string, name: string) {
+    Alert.alert('Desbloquear', `¿Volver a ver publicaciones de ${name}?`, [
+      { text: 'Cancelar', style: 'cancel' },
+      { text: 'Desbloquear', onPress: async () => {
+        await unblock(id);
+        setBlockedProfiles(prev => prev.filter(p => p.id !== id));
+      }},
+    ]);
+  }
   const [deleting, setDeleting] = useState(false);
   const { profile, updateProfile, resetOnboarding } = useUserProfile();
   const { clearAllAquariums } = useAquariums();
@@ -480,6 +513,26 @@ export default function ProfileScreen({ onClose, navigation }: Props) {
 
             <View style={styles.actionDivider} />
 
+            <TouchableOpacity style={styles.actionRow} onPress={openBlockedList}>
+              <View style={[styles.actionIcon, { backgroundColor: COLORS.textMuted + '20' }]}>
+                <Ionicons name="person-remove-outline" size={18} color={COLORS.textMuted} />
+              </View>
+              <Text style={[styles.actionText, { color: COLORS.text }]}>Usuarios bloqueados</Text>
+              {blocked.size > 0 ? (
+                <View style={{
+                  backgroundColor: COLORS.textMuted + '20', paddingHorizontal: 8, paddingVertical: 2,
+                  borderRadius: 10, marginRight: 6,
+                }}>
+                  <Text style={{ fontSize: 11, color: COLORS.textMuted, fontFamily: FONTS.sansBd }}>
+                    {blocked.size}
+                  </Text>
+                </View>
+              ) : null}
+              <Ionicons name="chevron-forward" size={16} color={COLORS.textMuted} />
+            </TouchableOpacity>
+
+            <View style={styles.actionDivider} />
+
             <TouchableOpacity style={styles.actionRow} onPress={confirmSignOut}>
               <View style={[styles.actionIcon, { backgroundColor: COLORS.error + '20' }]}>
                 <Ionicons name="log-out-outline" size={18} color={COLORS.error} />
@@ -511,6 +564,62 @@ export default function ProfileScreen({ onClose, navigation }: Props) {
         </Text>
 
       </ScrollView>
+
+      <Modal visible={showBlocked} animationType="slide" transparent onRequestClose={() => setShowBlocked(false)}>
+        <View style={{ flex: 1, backgroundColor: 'rgba(0,0,0,0.35)', justifyContent: 'flex-end' }}>
+          <View style={{
+            backgroundColor: COLORS.backgroundCard, borderTopLeftRadius: 22, borderTopRightRadius: 22,
+            padding: SPACING.md, paddingBottom: SPACING.xxl, maxHeight: '80%',
+          }}>
+            <View style={{ width: 42, height: 4, borderRadius: 2, backgroundColor: COLORS.border,
+              alignSelf: 'center', marginBottom: SPACING.sm }} />
+            <View style={{ flexDirection: 'row', alignItems: 'center', marginBottom: SPACING.md }}>
+              <Text style={{ flex: 1, fontSize: 17, fontWeight: '700', color: COLORS.text, fontFamily: FONTS.sansBd }}>
+                Usuarios bloqueados
+              </Text>
+              <TouchableOpacity onPress={() => setShowBlocked(false)}
+                style={{ width: 32, height: 32, borderRadius: 16, backgroundColor: COLORS.backgroundLight,
+                  alignItems: 'center', justifyContent: 'center' }}>
+                <Ionicons name="close" size={18} color={COLORS.textMuted} />
+              </TouchableOpacity>
+            </View>
+            {blockedProfiles.length === 0 ? (
+              <View style={{ alignItems: 'center', padding: SPACING.xl }}>
+                <Ionicons name="people-outline" size={48} color={COLORS.textMuted} />
+                <Text style={{ color: COLORS.textMuted, marginTop: SPACING.sm, fontFamily: FONTS.sans }}>
+                  No has bloqueado a nadie.
+                </Text>
+              </View>
+            ) : (
+              <ScrollView>
+                {blockedProfiles.map(p => (
+                  <View key={p.id} style={{
+                    flexDirection: 'row', alignItems: 'center', gap: SPACING.sm,
+                    paddingVertical: SPACING.sm, borderBottomWidth: 1, borderColor: COLORS.border,
+                  }}>
+                    <View style={{
+                      width: 40, height: 40, borderRadius: 20, backgroundColor: COLORS.primary + '33',
+                      alignItems: 'center', justifyContent: 'center',
+                    }}>
+                      <Ionicons name="person" size={20} color={COLORS.primary} />
+                    </View>
+                    <Text style={{ flex: 1, color: COLORS.text, fontSize: 14.5, fontFamily: FONTS.sansSb }}>
+                      {p.name}
+                    </Text>
+                    <TouchableOpacity onPress={() => handleUnblock(p.id, p.name)}
+                      style={{ paddingHorizontal: 14, paddingVertical: 8, borderRadius: 14,
+                        backgroundColor: COLORS.primary + '18' }}>
+                      <Text style={{ fontSize: 12, fontWeight: '700', color: COLORS.primary, fontFamily: FONTS.sansBd }}>
+                        Desbloquear
+                      </Text>
+                    </TouchableOpacity>
+                  </View>
+                ))}
+              </ScrollView>
+            )}
+          </View>
+        </View>
+      </Modal>
       </SafeAreaView>
     </LinearGradient>
   );

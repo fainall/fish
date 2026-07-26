@@ -18,6 +18,8 @@ import { useAuth } from '../../hooks/useAuth';
 import { useCommunity } from '../../hooks/useCommunity';
 import { useAchievements, ACHIEVEMENTS } from '../../hooks/useAchievements';
 import UserProfileModal from '../../components/community/UserProfileModal';
+import ReportBlockMenu from '../../components/community/ReportBlockMenu';
+import { ReportTarget } from '../../hooks/useTickets';
 
 function timeAgo(iso: string): string {
   const diff = Date.now() - new Date(iso).getTime();
@@ -55,9 +57,10 @@ interface PostCardProps {
   onOpenComments: (post: Post) => void;
   onShare: (post: Post) => void;
   onUserPress: (userId: string, userName: string) => void;
+  onReport: (post: Post) => void;
 }
 
-function PostCard({ post, currentUserId, onLike, onOpenComments, onShare, onUserPress }: PostCardProps) {
+function PostCard({ post, currentUserId, onLike, onOpenComments, onShare, onUserPress, onReport }: PostCardProps) {
   const liked = post.likes.includes(currentUserId);
   const achievement = post.achievement_id
     ? ACHIEVEMENTS.find(a => a.id === post.achievement_id)
@@ -102,6 +105,16 @@ function PostCard({ post, currentUserId, onLike, onOpenComments, onShare, onUser
           <Ionicons name="person-outline" size={13} color={COLORS.primary} />
           <Text style={{ fontSize: 11, color: COLORS.primary, fontWeight: '700' }}>Perfil</Text>
         </TouchableOpacity>
+        {post.user_id !== currentUserId ? (
+          <TouchableOpacity
+            onPress={() => onReport(post)}
+            hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
+            style={{ padding: 6, marginLeft: 4 }}
+            activeOpacity={0.7}
+          >
+            <Ionicons name="ellipsis-vertical" size={18} color={COLORS.textMuted} />
+          </TouchableOpacity>
+        ) : null}
       </View>
 
       {/* Content */}
@@ -161,10 +174,12 @@ interface CommentsModalProps {
   onClose: () => void;
   onAddComment: (postId: string, text: string) => void;
   onDeleteComment: (postId: string, commentId: string) => void;
+  onReportComment: (comment: PostComment) => void;
 }
 
 function CommentsModal({
-  post, comments, currentUserId, currentUserName, visible, onClose, onAddComment, onDeleteComment,
+  post, comments, currentUserId, currentUserName, visible, onClose,
+  onAddComment, onDeleteComment, onReportComment,
 }: CommentsModalProps) {
   const [text, setText] = useState('');
 
@@ -214,7 +229,7 @@ function CommentsModal({
                   <Text style={styles.commentText}>{item.content}</Text>
                   <Text style={styles.commentTime}>{timeAgo(item.created_at)}</Text>
                 </View>
-                {item.user_id === currentUserId && (
+                {item.user_id === currentUserId ? (
                   <TouchableOpacity
                     style={styles.commentDeleteBtn}
                     hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
@@ -226,6 +241,14 @@ function CommentsModal({
                     )}
                   >
                     <Ionicons name="trash-outline" size={15} color={COLORS.textMuted} />
+                  </TouchableOpacity>
+                ) : (
+                  <TouchableOpacity
+                    style={styles.commentDeleteBtn}
+                    hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
+                    onPress={() => onReportComment(item)}
+                  >
+                    <Ionicons name="ellipsis-vertical" size={15} color={COLORS.textMuted} />
                   </TouchableOpacity>
                 )}
               </View>
@@ -574,6 +597,16 @@ export default function CommunityScreen() {
   const [showCreate,   setShowCreate]   = useState(false);
   const [refreshing,   setRefreshing]   = useState(false);
   const [profileUser,  setProfileUser]  = useState<{ id: string; name: string } | null>(null);
+  const [reportTarget, setReportTarget] = useState<{
+    target: ReportTarget; id: string; userId: string; userName: string;
+  } | null>(null);
+
+  function openReportPost(post: Post) {
+    setReportTarget({ target: 'post', id: post.id, userId: post.user_id, userName: post.user_name });
+  }
+  function openReportComment(c: PostComment) {
+    setReportTarget({ target: 'comment', id: c.id, userId: c.user_id, userName: c.user_name });
+  }
   /** When set, opens the create modal with this achievement pre-attached */
   const [shareAchId,   setShareAchId]   = useState<string | undefined>(undefined);
 
@@ -799,6 +832,7 @@ export default function CommunityScreen() {
             onOpenComments={handleOpenComments}
             onShare={handleShare}
             onUserPress={(id, name) => setProfileUser({ id, name })}
+            onReport={openReportPost}
           />
         )}
       />
@@ -821,7 +855,19 @@ export default function CommunityScreen() {
         onClose={() => setShowComments(false)}
         onAddComment={handleAddComment}
         onDeleteComment={deleteComment}
+        onReportComment={openReportComment}
       />
+
+      {reportTarget && (
+        <ReportBlockMenu
+          visible={!!reportTarget}
+          onClose={() => setReportTarget(null)}
+          target={reportTarget.target}
+          targetId={reportTarget.id}
+          targetUserId={reportTarget.userId}
+          targetUserName={reportTarget.userName}
+        />
+      )}
 
       <CreatePostModal
         visible={showCreate}
